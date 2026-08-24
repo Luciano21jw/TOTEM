@@ -165,8 +165,20 @@
 </div>
 
 <script>
-    // COLE SEU LINK DO APPS SCRIPT AQUI (ex: https://script.google.com/macros/s/XXXX/exec)
-    const URL_API = "https://script.google.com/macros/s/AKfycbxDLDP6p4MMzcHGbhvyaxexwZ-4pVYRy_YjgPWjy3cPIE8hwxxAhoNI8p0NKcnW6wjE/exec"; 
+    // ============================================================
+    //  CONFIGURAÇÃO - COLE SEU LINK /exec AQUI
+    // ============================================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
+
+    // ============================================================
+    //  PRODUTOS DE FALLBACK (Caso a API demore a responder)
+    // ============================================================
+    const PRODUTOS_FALLBACK = [
+        { nome: 'X-Burger', preco: 25.90, imagem: '', categoria: 'Lanches' },
+        { nome: 'Batata Frita', preco: 12.50, imagem: '', categoria: 'Acompanhamentos' },
+        { nome: 'Refrigerante', preco: 8.00, imagem: '', categoria: 'Bebidas' },
+        { nome: 'Milkshake', preco: 15.90, imagem: '', categoria: 'Sobremesas' }
+    ];
 
     let carrinho = [];
     let produtos = [];
@@ -176,14 +188,7 @@
     let totalPedido = 0;
     let whatsappCliente = "";
 
-    // FALLBACK (produtos de exemplo caso a API demore)
-    const FALLBACK_PRODUTOS = [
-        { nome: "X-Burger", preco: 25.90, imagem: "https://picsum.photos/200/200?random=1", categoria: "Lanches" },
-        { nome: "Batata Frita", preco: 12.50, imagem: "https://picsum.photos/200/200?random=2", categoria: "Acompanhamentos" },
-        { nome: "Refrigerante", preco: 8.00, imagem: "https://picsum.photos/200/200?random=3", categoria: "Bebidas" },
-        { nome: "Milkshake", preco: 15.90, imagem: "https://picsum.photos/200/200?random=4", categoria: "Sobremesas" }
-    ];
-
+    // Máscara de telefone
     document.getElementById('inputWhatsapp').addEventListener('input', function(e) {
         let v = e.target.value.replace(/\D/g, '').substring(0, 11);
         if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
@@ -193,17 +198,51 @@
         e.target.value = v;
     });
 
+    // ============================================================
+    //  CONEXÃO VIA JSONP (Igual ao seu script original)
+    // ============================================================
+    function jsonp(url, callbackName) {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                delete window[callbackName];
+                reject(new Error("Tempo esgotado"));
+            }, 10000);
+
+            window[callbackName] = function(data) {
+                clearTimeout(timeout);
+                resolve(data);
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+            script.onerror = () => {
+                clearTimeout(timeout);
+                delete window[callbackName];
+                reject(new Error("Erro de conexão"));
+            };
+            document.body.appendChild(script);
+        });
+    }
+
+    // ============================================================
+    //  CARREGAR PRODUTOS
+    // ============================================================
     async function carregarProdutos() {
         try {
-            const resposta = await fetch(`${URL_API}?api=produtos`);
-            const dados = await resposta.json();
-            if (dados.success) {
-                produtos = dados.data;
+            const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
+            if (data && !data.erro && Array.isArray(data) && data.length > 0) {
+                produtos = data.map(p => ({
+                    nome: p[1],
+                    preco: parseFloat(p[2]),
+                    imagem: p[3],
+                    categoria: p[5] || "Geral"
+                }));
             } else {
-                produtos = FALLBACK_PRODUTOS;
+                produtos = PRODUTOS_FALLBACK;
             }
         } catch (e) {
-            produtos = FALLBACK_PRODUTOS;
+            produtos = PRODUTOS_FALLBACK;
         }
         criarBarraCategorias();
         renderizarCardapio();
@@ -272,47 +311,42 @@
         irParaPagamento();
     }
 
+    // ============================================================
+    //  REGISTRAR VENDA E GERAR PIX (Usa action=registrarVenda)
+    // ============================================================
     async function irParaPagamento() {
         let total = 0;
         let itensStr = "";
         carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
         totalPedido = total;
 
-        const pedidoData = {
-            nome: "Cliente Totem",
-            whatsapp: whatsappCliente,
-            email: "",
-            endereco: "Retirada no balcão",
-            itens: itensStr,
-            qtd: carrinho.length,
-            valor: total.toFixed(2)
-        };
-
+        const callbackName = 'cb_venda_' + Date.now();
+        
         try {
-            const resposta = await fetch(URL_API, {
-                method: "POST",
-                body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
-            });
-            const dados = await resposta.json();
-            if (dados.success) {
-                pedidoAtual = dados.data;
-                if (pedidoAtual.pixCode) {
-                    mostrarTelaPix(pedidoAtual.pixCode, total);
-                } else {
-                    alert("Erro ao gerar PIX. Verifique a Chave PIX na planilha.");
-                }
+            // Monta a URL no formato JSONP do seu script
+            const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=${encodeURIComponent(whatsappCliente)}&descricao=${encodeURIComponent(itensStr)}`;
+            
+            const resultado = await jsonp(url, callbackName);
+            
+            if (resultado && resultado.success) {
+                pedidoAtual = resultado;
+                mostrarTelaPix(resultado.pixCode, total);
             } else {
-                alert("Erro: " + dados.mensagem);
+                alert("Erro: " + (resultado?.erro || resultado?.mensagem || "Erro desconhecido"));
             }
         } catch (e) {
             alert("Erro de conexão. Verifique o link do script.");
         }
     }
 
+    // ============================================================
+    //  MOSTRAR PIX E INICIAR VERIFICAÇÃO AUTOMÁTICA
+    // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
         document.getElementById('displayCliente').innerText = whatsappCliente;
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
+        
         document.getElementById('statusPagamento').className = 'status-pendente';
         document.getElementById('statusPagamento').innerText = "⏳ Aguardando pagamento...";
         document.getElementById('temporizador').innerText = "⏱️ Verificando automaticamente...";
@@ -320,6 +354,7 @@
         document.getElementById('qrContainer').classList.remove('confirmed');
         document.getElementById('btnNovaVenda').style.display = 'none';
         document.getElementById('btnWhatsapp').style.display = 'none';
+
         document.getElementById('pixCodeTexto').innerText = code;
         window.pixCodeGlobal = code;
 
@@ -328,6 +363,7 @@
         new QRCode(qrDiv, { text: code, width: 170, height: 170 });
         
         if (timerVerificacao) clearInterval(timerVerificacao);
+        
         let segundos = 0;
         const maxSegundos = 600;
 
@@ -345,31 +381,44 @@
 
         timerVerificacao = setInterval(async () => {
             try {
-                const resposta = await fetch(`${URL_API}?api=pedido&id=${pedidoAtual.orderId}`);
-                const dados = await resposta.json();
-                if (dados.success && dados.data && dados.data.status === "PAGO") {
+                // Usa action=verificarPagamento do seu script
+                const callbackName = 'cb_verif_' + Date.now();
+                const resultado = await jsonp(`${SCRIPT_URL}?action=verificarPagamento`, callbackName);
+                
+                if (resultado && resultado.encontrado && resultado.confirmado) {
                     clearInterval(timerVerificacao);
                     clearInterval(intervaloTempo);
+                    
                     document.getElementById('statusPagamento').className = 'status-pago';
                     document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
                     document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
                     document.getElementById('qrContainer').classList.add('confirmed');
+                    
                     const checkBox = document.getElementById('checkWritingContainer');
                     checkBox.classList.add('visivel');
                     const path = checkBox.querySelector('.check-path');
                     path.style.animation = 'none';
                     path.offsetHeight;
                     path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
+
+                    // Libera o botão do WhatsApp
                     document.getElementById('btnWhatsapp').style.display = 'block';
+
                     setTimeout(() => {
                         document.getElementById('btnNovaVenda').style.display = 'block';
                     }, 1500);
+                    
                     limparCarrinho();
                 }
-            } catch (e) {}
+            } catch (e) {
+                // Tenta novamente em 5 segundos
+            }
         }, 5000);
     }
 
+    // ============================================================
+    //  ENVIAR CONFIRMAÇÃO VIA WHATSAPP
+    // ============================================================
     function enviarMensagemWhatsApp() {
         if (!whatsappCliente || !window.pixCodeGlobal) return;
         const msg = `✅ *PAGAMENTO CONFIRMADO!*\n\nPedido liberado com sucesso!\nValor: R$ ${totalPedido.toFixed(2).replace('.', ',')}`;
