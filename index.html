@@ -1,358 +1,352 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🍔 ASV Restaurante</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totem McDia Feliz</title>
+    <!-- Importando fonte parecida com a do McDonald's -->
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: #1a1a2e;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
+    <style>
+        :root {
+            --amarelo: #FFC72C;
+            --vermelho: #DA291C;
+            --preto: #27251F;
+            --branco: #FFFFFF;
+            --cinza-claro: #F5F5F5;
+            --cinza-escuro: #666;
+        }
 
-    .container {
-      max-width: 800px;
-      width: 100%;
-      text-align: center;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            user-select: none; /* Impede seleção de texto, como num totem */
+        }
 
-    h1 {
-      color: #fff;
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    .subtitle {
-      color: #888;
-      font-size: 16px;
-      margin-bottom: 40px;
-    }
+        /* Estrutura do Totem */
+        .totem {
+            width: 420px;
+            height: 800px;
+            background-color: var(--branco);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 5px solid var(--preto); /* Moldura preta estilo totem */
+        }
 
-    .cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
+        /* Sistema de Telas */
+        .tela {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            transition: opacity 0.3s;
+        }
 
-    .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 20px;
-      padding: 40px 30px;
-      border: 1px solid rgba(255,255,255,0.08);
-      text-decoration: none;
-      color: #fff;
-      transition: all 0.3s;
-      cursor: pointer;
-      position: relative;
-    }
+        .tela.ativa {
+            display: flex;
+        }
 
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
+        /* TELA 1: HOME */
+        #home {
+            background-color: var(--amarelo);
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            text-align: center;
+        }
 
-    .card .icon {
-      font-size: 64px;
-      margin-bottom: 16px;
-      display: block;
-    }
+        .logo {
+            font-family: 'Baloo 2', cursive;
+            font-size: 60px;
+            color: var(--vermelho);
+            margin-top: 20px;
+        }
 
-    .card h2 {
-      font-size: 22px;
-      margin-bottom: 8px;
-    }
+        .titulo-campanha {
+            font-family: 'Baloo 2', cursive;
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--preto);
+            line-height: 1;
+        }
 
-    .card p {
-      color: #888;
-      font-size: 14px;
-      line-height: 1.6;
-    }
+        .titulo-campanha span {
+            color: var(--vermelho);
+        }
 
-    .card.cliente {
-      border-color: rgba(227, 24, 55, 0.3);
-    }
+        .imagem-central {
+            font-size: 100px;
+            margin: 20px 0;
+            /* Aqui entraria a imagem real do sanduíche e casa */
+        }
 
-    .card.cliente:hover {
-      border-color: #e31837;
-      background: rgba(227, 24, 55, 0.1);
-    }
+        .data-evento {
+            background-color: var(--branco);
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
 
-    .card.restaurante {
-      border-color: rgba(255, 193, 7, 0.3);
-    }
+        .botao-iniciar {
+            width: 100%;
+            background-color: #00457C; /* Azul escuro estilo McD */
+            color: var(--branco);
+            border: none;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .botao-iniciar:hover {
+            background-color: #003057;
+        }
 
-    .card.restaurante:hover {
-      border-color: #ffc107;
-      background: rgba(255, 193, 7, 0.08);
-    }
+        /* TELA 2: ESCOLHA */
+        #escolha {
+            background-color: var(--branco);
+            align-items: center;
+            padding-top: 50px;
+        }
 
-    .badge {
-      display: inline-block;
-      background: #e31837;
-      color: #fff;
-      padding: 2px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 10px;
-    }
+        .titulo-escolha {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: var(--preto);
+        }
 
-    .badge-restrito {
-      display: inline-block;
-      background: #ffc107;
-      color: #1a1a2e;
-      padding: 2px 12px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 700;
-      margin-top: 10px;
-      letter-spacing: 0.5px;
-    }
+        .opcoes {
+            display: flex;
+            gap: 20px;
+            width: 90%;
+        }
 
-    .cadeado {
-      position: absolute;
-      top: 12px;
-      right: 16px;
-      font-size: 16px;
-      opacity: 0.6;
-    }
+        .botao-opcao {
+            flex: 1;
+            height: 300px;
+            background-color: var(--cinza-claro);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--preto);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
 
-    footer {
-      color: #444;
-      font-size: 12px;
-      margin-top: 40px;
-    }
+        .botao-opcao:hover {
+            background-color: #e0e0e0;
+        }
 
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
+        .icone-opcao {
+            font-size: 80px;
+            background-color: var(--branco);
+            padding: 20px;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
 
-    .modal-overlay.active {
-      display: flex;
-    }
+        /* TELA 3: CARDÁPIO */
+        #cardapio {
+            background-color: var(--cinza-claro);
+        }
 
-    .modal-senha {
-      background: #2d2d44;
-      border-radius: 20px;
-      padding: 40px 35px;
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-      animation: fadeIn 0.3s ease;
-    }
+        .header-cardapio {
+            background-color: var(--vermelho);
+            color: var(--branco);
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
+        .botao-voltar {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: none;
+            border: 2px solid var(--branco);
+            color: var(--branco);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
 
-    .modal-senha .icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-      display: block;
-    }
+        .area-produtos {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-    .modal-senha h2 {
-      color: #fff;
-      font-size: 20px;
-      margin-bottom: 6px;
-    }
+        .produto {
+            background: var(--branco);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-    .modal-senha p {
-      color: #888;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
+        .produto img, .produto .icone-produto {
+            font-size: 50px;
+            margin: 10px auto;
+        }
 
-    .modal-senha input {
-      width: 100%;
-      padding: 14px 18px;
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      background: rgba(255,255,255,0.06);
-      color: #fff;
-      font-size: 18px;
-      text-align: center;
-      letter-spacing: 4px;
-      outline: none;
-      transition: border-color 0.3s;
-    }
+        .nome-produto {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--preto);
+            margin-bottom: 5px;
+        }
 
-    .modal-senha input:focus {
-      border-color: #ffc107;
-    }
+        .preco-produto {
+            color: var(--vermelho);
+            font-weight: bold;
+        }
 
-    .modal-senha input::placeholder {
-      color: #555;
-      letter-spacing: 0;
-      font-size: 14px;
-    }
+        .rodape-cardapio {
+            background: var(--branco);
+            padding: 15px 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .modal-senha .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
+        .total-carrinho {
+            font-size: 18px;
+        }
 
-    .modal-senha .btn-group button {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .btn-entrar {
-      background: #ffc107;
-      color: #1a1a2e;
-    }
-
-    .btn-entrar:hover {
-      background: #e6a800;
-      transform: scale(1.02);
-    }
-
-    .btn-cancelar-senha {
-      background: rgba(255,255,255,0.08);
-      color: #888;
-    }
-
-    .btn-cancelar-senha:hover {
-      background: rgba(255,255,255,0.15);
-    }
-
-    .erro-senha {
-      color: #dc3545;
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
-    }
-
-    .erro-senha.visivel {
-      display: block;
-    }
-
-    @media (max-width: 600px) {
-      .cards {
-        grid-template-columns: 1fr;
-      }
-      h1 { font-size: 24px; }
-      .card { padding: 30px 20px; }
-      .modal-senha { padding: 30px 20px; }
-    }
-  </style>
+        .botao-finalizar {
+            background: var(--vermelho);
+            color: var(--branco);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>🍔 ASV Restaurante</h1>
-    <p class="subtitle">Sistema de Pedidos Fast-Food</p>
+<div class="totem">
     
-    <div class="cards">
-      <a href="?page=cliente" class="card cliente">
-        <span class="icon">📱</span>
-        <h2>Cliente</h2>
-        <p>Faça seu pedido online<br>Visualize o status do seu pedido</p>
-        <span class="badge">NOVO PEDIDO</span>
-      </a>
-      
-      <div class="card restaurante" onclick="abrirModalSenha()">
-        <span class="cadeado">🔒</span>
-        <span class="icon">👨‍🍳</span>
-        <h2>Restaurante</h2>
-        <p>Painel de atendimento<br>Gerencie os pedidos em tempo real</p>
-        <span class="badge-restrito">🔐 ACESSO RESTRITO</span>
-      </div>
+    <!-- TELA 1: INÍCIO -->
+    <div id="home" class="tela ativa">
+        <div class="logo">M</div>
+        <h1 class="titulo-campanha">McDia<br><span>Feliz</span> M</h1>
+        <div class="imagem-central">🍔 🏠 🧸</div> <!-- Substituir por imagem real -->
+        <p>SATÁBADO, 23 DE AGOSTO</p>
+        <button class="botao-iniciar" onclick="irParaEscolha()">Toque para começar</button>
     </div>
-    
-    <footer>© 2026 ASV Restaurante • Sistema de Pedidos</footer>
-  </div>
 
-  <div class="modal-overlay" id="modalSenha">
-    <div class="modal-senha">
-      <span class="icon">🔐</span>
-      <h2>Acesso Restrito</h2>
-      <p>Digite a senha para acessar o painel do restaurante</p>
-      
-      <input type="password" id="inputSenha" placeholder="Digite a senha" maxlength="10" autofocus>
-      
-      <div class="erro-senha" id="erroSenha">❌ Senha incorreta! Tente novamente.</div>
-      
-      <div class="btn-group">
-        <button class="btn-entrar" onclick="verificarSenha()">🔓 Entrar</button>
-        <button class="btn-cancelar-senha" onclick="fecharModalSenha()">Cancelar</button>
-      </div>
+    <!-- TELA 2: ESCOLHA -->
+    <div id="escolha" class="tela">
+        <h2 class="titulo-escolha">Escolha</h2>
+        <div class="opcoes">
+            <button class="botao-opcao" onclick="irParaCardapio()">
+                <div class="icone-opcao">🍔🍟</div>
+                <span>Para comer aqui</span>
+            </button>
+            <button class="botao-opcao" onclick="irParaCardapio()">
+                <div class="icone-opcao">🛍️</div>
+                <span>Para levar</span>
+            </button>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const SENHA_CORRETA = '142597';
+    <!-- TELA 3: CARDÁPIO -->
+    <div id="cardapio" class="tela">
+        <div class="header-cardapio">
+            <button class="botao-voltar" onclick="voltarParaEscolha()">&larr; Voltar</button>
+            BATATA C/ QUEIJOS
+        </div>
+        <div class="area-produtos">
+            <!-- Produtos Simulados -->
+            <div class="produto">
+                <div class="icone-produto">🍔</div>
+                <div class="nome-produto">Big Mac</div>
+                <div class="preco-produto">R$ 28,90</div>
+            </div>
+            <div class="produto">
+                <div class="icone-produto">🍟</div>
+                <div class="nome-produto">Batata Média</div>
+                <div class="preco-produto">R$ 12,50</div>
+            </div>
+            <div class="produto">
+                <div class="icone-produto">🥤</div>
+                <div class="nome-produto">Refrigerante</div>
+                <div class="preco-produto">R$ 8,00</div>
+            </div>
+            <div class="produto">
+                <div class="icone-produto">🍦</div>
+                <div class="nome-produto">McFlurry</div>
+                <div class="preco-produto">R$ 15,90</div>
+            </div>
+        </div>
+        <div class="rodape-cardapio">
+            <span class="total-carrinho">Total: R$ 0,00</span>
+            <button class="botao-finalizar">Finalizar Pedido</button>
+        </div>
+    </div>
 
-    function abrirModalSenha() {
-      document.getElementById('modalSenha').classList.add('active');
-      document.getElementById('inputSenha').value = '';
-      document.getElementById('erroSenha').classList.remove('visivel');
-      setTimeout(function() {
-        document.getElementById('inputSenha').focus();
-      }, 300);
+</div>
+
+<script>
+    // Funções para navegação entre as telas
+    function mostrarTela(idTela) {
+        document.querySelectorAll('.tela').forEach(tela => {
+            tela.classList.remove('ativa');
+        });
+        document.getElementById(idTela).classList.add('ativa');
     }
 
-    function fecharModalSenha() {
-      document.getElementById('modalSenha').classList.remove('active');
-      document.getElementById('erroSenha').classList.remove('visivel');
+    function irParaEscolha() {
+        mostrarTela('escolha');
     }
 
-    function verificarSenha() {
-      var senha = document.getElementById('inputSenha').value.trim();
-      
-      if (senha === SENHA_CORRETA) {
-        window.location.href = '?page=restaurante';
-      } else {
-        document.getElementById('erroSenha').classList.add('visivel');
-        document.getElementById('inputSenha').value = '';
-        document.getElementById('inputSenha').focus();
-        setTimeout(function() {
-          document.getElementById('erroSenha').classList.remove('visivel');
-        }, 3000);
-      }
+    function irParaCardapio() {
+        mostrarTela('cardapio');
     }
 
-    document.getElementById('inputSenha').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        verificarSenha();
-      }
-      if (e.key === 'Escape') {
-        fecharModalSenha();
-      }
-    });
-
-    document.getElementById('modalSenha').addEventListener('click', function(e) {
-      if (e.target === this) {
-        fecharModalSenha();
-      }
-    });
-  </script>
+    function voltarParaEscolha() {
+        mostrarTela('escolha');
+    }
+</script>
 
 </body>
 </html>
