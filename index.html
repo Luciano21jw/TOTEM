@@ -54,6 +54,14 @@
         .botao-limpar { flex: 1; background: #eee; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: bold; }
         .botao-finalizar { flex: 2; background: var(--verde); color: white; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: 800; }
 
+        #telaWhatsapp { background: white; align-items: center; justify-content: center; padding: 20px; }
+        #telaWhatsapp h2 { font-size: 24px; font-weight: 800; color: var(--secundaria); margin-bottom: 20px; text-align: center; }
+        .campo-whatsapp { width: 100%; margin-bottom: 20px; }
+        .campo-whatsapp label { font-weight: 700; font-size: 14px; color: var(--secundaria); display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .campo-whatsapp input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 10px; font-size: 18px; font-weight: 700; text-align: center; letter-spacing: 1px; color: var(--secundaria); outline: none; }
+        .campo-whatsapp input:focus { border-color: #25D366; }
+        .btn-confirmar-whatsapp { width: 100%; background: #25D366; color: white; border: none; border-radius: 10px; padding: 15px; font-size: 18px; font-weight: 800; cursor: pointer; }
+
         #pix { background: var(--fundo); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
         .pix-header { text-align: center; margin-bottom: 10px; }
         .pix-header .client-name { font-size: 1.1rem; font-weight: 700; color: var(--secundaria); }
@@ -79,6 +87,8 @@
         .footer-actions { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         .botao-nova-venda { flex: 1; background: var(--secundaria); color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 16px; }
         .botao-cancelar-venda { flex: 1; background: rgba(255,82,82,0.1); color: var(--vermelho); border: 1px solid rgba(255,82,82,0.2); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 14px; }
+        .botao-whatsapp { background: #25D366; color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 800; font-size: 14px; width: 100%; margin-bottom: 10px; display: none; }
+        .botao-whatsapp:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -113,9 +123,18 @@
             <div class="linha-total"><span>Total:</span><span id="totalCarrinho">R$ 0,00</span></div>
             <div class="botoes-rodape">
                 <button class="botao-limpar" onclick="limparCarrinho()">Limpar</button>
-                <button class="botao-finalizar" onclick="irParaPagamento()">Pagar</button>
+                <button class="botao-finalizar" onclick="irParaWhatsapp()">Pagar</button>
             </div>
         </div>
+    </div>
+
+    <div id="telaWhatsapp" class="tela">
+        <h2>Digite seu WhatsApp</h2>
+        <div class="campo-whatsapp">
+            <label>📱 Número com DDD</label>
+            <input type="tel" id="inputWhatsapp" placeholder="(11) 99999-9999" maxlength="15">
+        </div>
+        <button class="btn-confirmar-whatsapp" onclick="confirmarWhatsapp()">Confirmar e Ver PIX</button>
     </div>
 
     <div id="pix" class="tela">
@@ -135,6 +154,9 @@
             <div id="qrcode"></div>
         </div>
         <div class="pix-code-copy" id="pixCodeTexto" onclick="copiarPix()">📋 Clique para copiar o código Pix</div>
+        <button class="botao-whatsapp" id="btnWhatsapp" onclick="enviarMensagemWhatsApp()">
+            📲 Enviar Confirmação no WhatsApp
+        </button>
         <div class="footer-actions">
             <button class="botao-cancelar-venda" onclick="cancelarPedido()">Cancelar</button>
             <button class="botao-nova-venda" id="btnNovaVenda" style="display:none;" onclick="navegar('home')">Nova Venda</button>
@@ -143,61 +165,34 @@
 </div>
 
 <script>
-    // ============================================================
-    //  LINK DO WEB APP (NÃO MEXER)
-    // ============================================================
+    // COLE SEU LINK DO WEB APP AQUI
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1Gg6hxAFlW9c2EJWwkM1GlhvHaqDIdMX09k8JKomDvP_XrWP4nhRNfwnUjYpCV_f5/exec"; 
 
     let carrinho = [];
     let produtos = [];
+    let pedidoAtual = null;
     let categoriaAtiva = "Todos";
     let timerVerificacao = null;
     let totalPedido = 0;
-    let vendaConfirmada = false;
+    let whatsappCliente = "";
 
-    // ============================================================
-    //  FUNÇÃO JSONP (NÃO MEXER)
-    // ============================================================
-    function jsonp(url, callbackName) {
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                delete window[callbackName];
-                reject(new Error("Tempo esgotado"));
-            }, 10000);
+    // Máscara de telefone
+    document.getElementById('inputWhatsapp').addEventListener('input', function(e) {
+        let v = e.target.value.replace(/\D/g, '').substring(0, 11);
+        if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+        else v = v.replace(/^(\d*)/, '($1');
+        e.target.value = v;
+    });
 
-            window[callbackName] = function(data) {
-                clearTimeout(timeout);
-                resolve(data);
-                delete window[callbackName];
-            };
-
-            const script = document.createElement('script');
-            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
-            script.onerror = () => {
-                clearTimeout(timeout);
-                delete window[callbackName];
-                reject(new Error("Erro de conexão"));
-            };
-            document.body.appendChild(script);
-        });
-    }
-
-    // ============================================================
-    //  CARREGAR PRODUTOS (CORRIGIDO PARA LER OBJETOS)
-    // ============================================================
     async function carregarProdutos() {
         try {
-            const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
+            const resposta = await fetch(`${SCRIPT_URL}?api=produtos`);
+            const dados = await resposta.json();
             
-            // O Web App retorna um array de OBJETOS
-            if (data && !data.erro && Array.isArray(data) && data.length > 0) {
-                produtos = data.map(p => ({
-                    nome: p.nome,
-                    preco: parseFloat(p.preco),
-                    imagem: p.imagem,
-                    status: p.status,
-                    categoria: p.categoria || "Geral"
-                }));
+            if (dados.success && dados.data && dados.data.length > 0) {
+                produtos = dados.data;
             } else {
                 produtos = [];
             }
@@ -235,16 +230,18 @@
         filtrados.forEach((produto, index) => {
             const div = document.createElement('div');
             div.className = 'produto';
+            // Usando o índice exato para evitar problemas com nomes repetidos
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
-                <div class="preco-produto">R$ ${produto.preco.toFixed(2)}</div>
+                <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
                 <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
             `;
             container.appendChild(div);
         });
     }
 
+    // Usando o índice do array filtrado, garantindo que SEMPRE vai encontrar o produto
     function adicionarAoCarrinho(index) {
         const ativos = produtos.filter(p => p.status === "ATIVO");
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
@@ -253,6 +250,7 @@
         if (produto) {
             carrinho.push(produto);
             atualizarTotal();
+            // Feedback visual rápido
             const botoes = document.querySelectorAll('.adicionar-btn');
             botoes[index].innerText = "✓ Adicionado";
             setTimeout(() => {
@@ -265,44 +263,65 @@
 
     function atualizarTotal() {
         let total = 0;
-        carrinho.forEach(item => total += item.preco);
+        carrinho.forEach(item => total += parseFloat(item.preco));
         document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    // ============================================================
-    //  GERAR PIX (NÃO MEXER)
-    // ============================================================
-    async function irParaPagamento() {
+    function irParaWhatsapp() {
         if (carrinho.length === 0) { alert("Adicione itens!"); return; }
+        document.getElementById('inputWhatsapp').value = "";
+        navegar('telaWhatsapp');
+    }
 
+    async function confirmarWhatsapp() {
+        let numero = document.getElementById('inputWhatsapp').value;
+        numero = numero.replace(/\D/g, "");
+        if (numero.length < 10) { alert("Digite um número válido com DDD!"); return; }
+        whatsappCliente = numero;
+        irParaPagamento();
+    }
+
+    async function irParaPagamento() {
         let total = 0;
         let itensStr = "";
-        carrinho.forEach(item => { total += item.preco; itensStr += item.nome + ", "; });
+        carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
         totalPedido = total;
 
-        const callbackName = 'cb_venda_' + Date.now();
-        
+        const pedidoData = {
+            nome: "Cliente Totem",
+            telefone: whatsappCliente,
+            email: "",
+            endereco: "Retirada no balcão",
+            produto: itensStr,
+            qty: carrinho.length,
+            amount: total.toFixed(2)
+        };
+
         try {
-            const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=Cliente&descricao=${encodeURIComponent(itensStr)}`;
-            
-            const resultado = await jsonp(url, callbackName);
-            
-            if (resultado && resultado.success) {
-                mostrarTelaPix(resultado.pixCode, total);
+            const resposta = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
+            });
+            const dados = await resposta.json();
+
+            if (dados.success) {
+                pedidoAtual = dados.data;
+                if (pedidoAtual.pixCode) {
+                    mostrarTelaPix(pedidoAtual.pixCode, total);
+                } else {
+                    alert("Erro ao gerar PIX. Verifique a Chave PIX na planilha.");
+                }
             } else {
-                alert("Erro: " + (resultado?.erro || "Erro desconhecido"));
+                alert("Erro: " + (dados.mensagem || "Erro desconhecido"));
             }
         } catch (e) {
             alert("Erro de conexão. Verifique o link do script.");
         }
     }
 
-    // ============================================================
-    //  MOSTRAR PIX (5 MINUTOS)
-    // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
-        document.getElementById('displayCliente').innerText = "Cliente";
+        document.getElementById('displayCliente').innerText = whatsappCliente;
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
 
         document.getElementById('statusPagamento').className = 'status-pendente';
@@ -311,6 +330,7 @@
         document.getElementById('checkWritingContainer').classList.remove('visivel');
         document.getElementById('qrContainer').classList.remove('confirmed');
         document.getElementById('btnNovaVenda').style.display = 'none';
+        document.getElementById('btnWhatsapp').style.display = 'none';
 
         document.getElementById('pixCodeTexto').innerText = code;
         window.pixCodeGlobal = code;
@@ -322,7 +342,7 @@
         if (timerVerificacao) clearInterval(timerVerificacao);
         
         let segundos = 0;
-        const maxSegundos = 300; // 5 MINUTOS
+        const maxSegundos = 600;
 
         const intervaloTempo = setInterval(() => {
             segundos++;
@@ -336,57 +356,46 @@
             }
         }, 1000);
 
-        function executarVerificacao() {
-            if (vendaConfirmada) return;
-            
-            const verifyCallback = 'cb_verify_' + Date.now();
-            
-            jsonp(`${SCRIPT_URL}?action=verificarPagamento`, verifyCallback)
-                .then((resultado) => {
-                    if (resultado && resultado.confirmado) {
-                        confirmarPagamento();
-                    } else {
-                        if (segundos < maxSegundos) {
-                            timerVerificacao = setTimeout(executarVerificacao, 5000);
-                        }
-                    }
-                })
-                .catch(() => {
-                    if (segundos < maxSegundos) {
-                        timerVerificacao = setTimeout(executarVerificacao, 5000);
-                    }
-                });
-        }
+        timerVerificacao = setInterval(async () => {
+            try {
+                const resposta = await fetch(`${SCRIPT_URL}?api=pedido&id=${pedidoAtual.orderId}`);
+                const dados = await resposta.json();
+                
+                if (dados.success && dados.data && dados.data.status === "PAGO") {
+                    clearInterval(timerVerificacao);
+                    clearInterval(intervaloTempo);
+                    
+                    document.getElementById('statusPagamento').className = 'status-pago';
+                    document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
+                    document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
+                    document.getElementById('qrContainer').classList.add('confirmed');
+                    
+                    const checkBox = document.getElementById('checkWritingContainer');
+                    checkBox.classList.add('visivel');
+                    const path = checkBox.querySelector('.check-path');
+                    path.style.animation = 'none';
+                    path.offsetHeight;
+                    path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
 
-        timerVerificacao = setTimeout(executarVerificacao, 2000);
+                    document.getElementById('btnWhatsapp').style.display = 'block';
+
+                    setTimeout(() => {
+                        document.getElementById('btnNovaVenda').style.display = 'block';
+                    }, 1500);
+                    
+                    limparCarrinho();
+                }
+            } catch (e) {
+                // Tenta novamente
+            }
+        }, 5000);
     }
 
-    // ============================================================
-    //  CONFIRMAR PAGAMENTO
-    // ============================================================
-    function confirmarPagamento() {
-        if (vendaConfirmada) return;
-        vendaConfirmada = true;
-        clearTimeout(timerVerificacao);
-        clearInterval(intervaloTempo);
-
-        document.getElementById('statusPagamento').className = 'status-pago';
-        document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
-        document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
-        document.getElementById('qrContainer').classList.add('confirmed');
-
-        const checkBox = document.getElementById('checkWritingContainer');
-        checkBox.classList.add('visivel');
-        const path = checkBox.querySelector('.check-path');
-        path.style.animation = 'none';
-        path.offsetHeight;
-        path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
-
-        setTimeout(() => {
-            document.getElementById('btnNovaVenda').style.display = 'block';
-        }, 1500);
-        
-        limparCarrinho();
+    function enviarMensagemWhatsApp() {
+        if (!whatsappCliente || !window.pixCodeGlobal) return;
+        const msg = `✅ *PAGAMENTO CONFIRMADO!*\n\nPedido liberado com sucesso!\nValor: R$ ${totalPedido.toFixed(2).replace('.', ',')}`;
+        const url = `https://wa.me/55${whatsappCliente}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
     }
 
     function copiarPix() {
@@ -398,8 +407,7 @@
 
     function cancelarPedido() {
         if (confirm("Deseja cancelar este pedido?")) {
-            clearTimeout(timerVerificacao);
-            clearInterval(intervaloTempo);
+            clearInterval(timerVerificacao);
             navegar('home');
             limparCarrinho();
         }
