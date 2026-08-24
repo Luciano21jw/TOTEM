@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍔 ASV Restaurante</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 16px;
+      margin-bottom: 40px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 40px 30px;
+      border: 1px solid rgba(255,255,255,0.08);
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+
+    .card .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .card h2 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: #888;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .card.cliente {
+      border-color: rgba(227, 24, 55, 0.3);
+    }
+
+    .card.cliente:hover {
+      border-color: #e31837;
+      background: rgba(227, 24, 55, 0.1);
+    }
+
+    .card.restaurante {
+      border-color: rgba(255, 193, 7, 0.3);
+    }
+
+    .card.restaurante:hover {
+      border-color: #ffc107;
+      background: rgba(255, 193, 7, 0.08);
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e31837;
+      color: #fff;
+      padding: 2px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .badge-restrito {
+      display: inline-block;
+      background: #ffc107;
+      color: #1a1a2e;
+      padding: 2px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .cadeado {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 16px;
+      opacity: 0.6;
+    }
+
+    footer {
+      color: #444;
+      font-size: 12px;
+      margin-top: 40px;
+    }
+
+    /* MODAL DE SENHA */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-senha {
+      background: #2d2d44;
+      border-radius: 20px;
+      padding: 40px 35px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-senha .icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .modal-senha h2 {
+      color: #fff;
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .modal-senha p {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .modal-senha input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 18px;
+      text-align: center;
+      letter-spacing: 4px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .modal-senha input:focus {
+      border-color: #ffc107;
+    }
+
+    .modal-senha input::placeholder {
+      color: #555;
+      letter-spacing: 0;
+      font-size: 14px;
+    }
+
+    .modal-senha .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .modal-senha .btn-group button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-entrar {
+      background: #ffc107;
+      color: #1a1a2e;
+    }
+
+    .btn-entrar:hover {
+      background: #e6a800;
+      transform: scale(1.02);
+    }
+
+    .btn-cancelar-senha {
+      background: rgba(255,255,255,0.08);
+      color: #888;
+    }
+
+    .btn-cancelar-senha:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .erro-senha {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .erro-senha.visivel {
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+      h1 { font-size: 24px; }
+      .card { padding: 30px 20px; }
+      .modal-senha { padding: 30px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🍔 ASV Restaurante</h1>
+    <p class="subtitle">Sistema de Pedidos Fast-Food</p>
+    
+    <div class="cards">
+      <!-- CARTAO CLIENTE -->
+      <a href="?page=cliente" class="card cliente">
+        <span class="icon">📱</span>
+        <h2>Cliente</h2>
+        <p>Faça seu pedido online<br>Visualize o status do seu pedido</p>
+        <span class="badge">NOVO PEDIDO</span>
+      </a>
+      
+      <!-- CARTAO RESTAURANTE (COM CADEADO) -->
+      <div class="card restaurante" onclick="abrirModalSenha()">
+        <span class="cadeado">🔒</span>
+        <span class="icon">👨‍🍳</span>
+        <h2>Restaurante</h2>
+        <p>Painel de atendimento<br>Gerencie os pedidos em tempo real</p>
+        <span class="badge-restrito">🔐 ACESSO RESTRITO</span>
+      </div>
+    </div>
+    
+    <footer>© 2026 ASV Restaurante • Sistema de Pedidos</footer>
+  </div>
+
+  <!-- MODAL DE SENHA -->
+  <div class="modal-overlay" id="modalSenha">
+    <div class="modal-senha">
+      <span class="icon">🔐</span>
+      <h2>Acesso Restrito</h2>
+      <p>Digite a senha para acessar o painel do restaurante</p>
+      
+      <input type="password" id="inputSenha" placeholder="Digite a senha" maxlength="10" autofocus>
+      
+      <div class="erro-senha" id="erroSenha">❌ Senha incorreta! Tente novamente.</div>
+      
+      <div class="btn-group">
+        <button class="btn-entrar" onclick="verificarSenha()">🔓 Entrar</button>
+        <button class="btn-cancelar-senha" onclick="fecharModalSenha()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== SENHA CORRETA =====
+    const SENHA_CORRETA = '142597';
+
+    // ===== ABRIR MODAL =====
+    function abrirModalSenha() {
+      document.getElementById('modalSenha').classList.add('active');
+      document.getElementById('inputSenha').value = '';
+      document.getElementById('erroSenha').classList.remove('visivel');
+      setTimeout(function() {
+        document.getElementById('inputSenha').focus();
+      }, 300);
+    }
+
+    // ===== FECHAR MODAL =====
+    function fecharModalSenha() {
+      document.getElementById('modalSenha').classList.remove('active');
+      document.getElementById('erroSenha').classList.remove('visivel');
+    }
+
+    // ===== VERIFICAR SENHA =====
+    function verificarSenha() {
+      var senha = document.getElementById('inputSenha').value.trim();
+      
+      if (senha === SENHA_CORRETA) {
+        // Senha correta - redireciona
+        window.location.href = '?page=restaurante';
+      } else {
+        // Senha incorreta
+        document.getElementById('erroSenha').classList.add('visivel');
+        document.getElementById('inputSenha').value = '';
+        document.getElementById('inputSenha').focus();
+        
+        // Tenta novamente após erro
+        setTimeout(function() {
+          document.getElementById('erroSenha').classList.remove('visivel');
+        }, 3000);
+      }
+    }
+
+    // ===== ENTER PARA CONFIRMAR =====
+    document.getElementById('inputSenha').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        verificarSenha();
+      }
+      if (e.key === 'Escape') {
+        fecharModalSenha();
+      }
+    });
+
+    // ===== CLICK FORA DO MODAL =====
+    document.getElementById('modalSenha').addEventListener('click', function(e) {
+      if (e.target === this) {
+        fecharModalSenha();
+      }
+    });
+  </script>
+
+</body>
+</html>
