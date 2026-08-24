@@ -143,7 +143,10 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
+    // ============================================================
+    //  CONFIGURAÇÃO (Mesmo estilo do Pix Pro)
+    // ============================================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyH7nv7XElaYkPQKclxmfFJFswPk21wLlUpqGMwe231LmTuXFXIvBqizRCRaFhsetWn/exec"; 
 
     let carrinho = [];
     let produtos = [];
@@ -151,14 +154,52 @@
     let categoriaAtiva = "Todos";
     let timerVerificacao = null;
     let totalPedido = 0;
+    let vendaConfirmada = false;
 
+    // ============================================================
+    //  FUNÇÃO JSONP (Igual ao Pix Pro)
+    // ============================================================
+    function jsonp(url, callbackName) {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                delete window[callbackName];
+                reject(new Error("Tempo esgotado"));
+            }, 10000);
+
+            window[callbackName] = function(data) {
+                clearTimeout(timeout);
+                resolve(data);
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+            script.onerror = () => {
+                clearTimeout(timeout);
+                delete window[callbackName];
+                reject(new Error("Erro de conexão"));
+            };
+            document.body.appendChild(script);
+        });
+    }
+
+    // ============================================================
+    //  CARREGAR PRODUTOS (Usa action=getProdutos)
+    // ============================================================
     async function carregarProdutos() {
         try {
-            const resposta = await fetch(`${SCRIPT_URL}?api=produtos`);
-            const dados = await resposta.json();
+            const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
             
-            if (dados.success && dados.data && dados.data.length > 0) {
-                produtos = dados.data;
+            // O Pix Pro retorna array de arrays (linhas da planilha)
+            // Coluna 1: Nome, Coluna 2: Preço, Coluna 3: Imagem, Coluna 5: Categoria
+            if (data && !data.erro && Array.isArray(data) && data.length > 0) {
+                produtos = data.map(p => ({
+                    nome: p[1],
+                    preco: parseFloat(p[2]),
+                    imagem: p[3],
+                    status: p[4],
+                    categoria: p[5] || "Geral"
+                }));
             } else {
                 produtos = [];
             }
@@ -230,6 +271,9 @@
         document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
     }
 
+    // ============================================================
+    //  GERAR PIX (Usa action=registrarVenda)
+    // ============================================================
     async function irParaPagamento() {
         if (carrinho.length === 0) { alert("Adicione itens!"); return; }
 
@@ -238,40 +282,31 @@
         carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
         totalPedido = total;
 
-        const pedidoData = {
-            nome: "Cliente Totem",
-            telefone: "0000000000",
-            email: "",
-            endereco: "Retirada no balcão",
-            produto: itensStr,
-            qty: carrinho.length,
-            amount: total.toFixed(2)
-        };
-
+        const callbackName = 'cb_venda_' + Date.now();
+        
         try {
-            const resposta = await fetch(SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
-            });
-            const dados = await resposta.json();
-
-            if (dados.success) {
-                pedidoAtual = dados.data;
-                if (pedidoAtual.pixCode) {
-                    mostrarTelaPix(pedidoAtual.pixCode, total);
-                } else {
-                    alert("Erro ao gerar PIX. Verifique a Chave PIX na planilha.");
-                }
+            // Monta URL no formato JSONP exatamente como o Pix Pro
+            const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=Cliente&descricao=${encodeURIComponent(itensStr)}`;
+            
+            const resultado = await jsonp(url, callbackName);
+            
+            if (resultado && resultado.success) {
+                pedidoAtual = resultado;
+                mostrarTelaPix(resultado.pixCode, total);
             } else {
-                alert("Erro: " + (dados.mensagem || "Erro desconhecido"));
+                alert("Erro: " + (resultado?.erro || resultado?.mensagem || "Erro desconhecido"));
             }
         } catch (e) {
             alert("Erro de conexão. Verifique o link do script.");
         }
     }
 
+    // ============================================================
+    //  MOSTRAR PIX (Com Timer de 5 min)
+    // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
+        document.getElementById('displayCliente').innerText = "Cliente";
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
 
         document.getElementById('statusPagamento').className = 'status-pendente';
@@ -291,7 +326,7 @@
         if (timerVerificacao) clearInterval(timerVerificacao);
         
         let segundos = 0;
-        const maxSegundos = 300; // EXATAMENTE 5 MINUTOS
+        const maxSegundos = 300; // 5 MINUTOS
 
         const intervaloTempo = setInterval(() => {
             segundos++;
@@ -305,38 +340,61 @@
             }
         }, 1000);
 
-        // VERIFICAÇÃO COMEÇA IMEDIATAMENTE (sem esperar o timer)
-        timerVerificacao = setInterval(async () => {
-            try {
-                const resposta = await fetch(`${SCRIPT_URL}?api=pedido&id=${pedidoAtual.orderId}`);
-                const dados = await resposta.json();
-                
-                if (dados.success && dados.data && dados.data.status === "PAGO") {
-                    clearInterval(timerVerificacao);
-                    clearInterval(intervaloTempo);
-                    
-                    document.getElementById('statusPagamento').className = 'status-pago';
-                    document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
-                    document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
-                    document.getElementById('qrContainer').classList.add('confirmed');
-                    
-                    const checkBox = document.getElementById('checkWritingContainer');
-                    checkBox.classList.add('visivel');
-                    const path = checkBox.querySelector('.check-path');
-                    path.style.animation = 'none';
-                    path.offsetHeight;
-                    path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
+        // Verificação começando imediatamente (usando JSONP igual ao Pix Pro)
+        function executarVerificacao() {
+            if (vendaConfirmada) return;
+            
+            const verifyCallback = 'cb_verify_' + Date.now();
+            
+            jsonp(`${SCRIPT_URL}?action=verificarPagamento`, verifyCallback)
+                .then((resultado) => {
+                    if (resultado && resultado.encontrado && resultado.confirmado) {
+                        confirmarPagamento();
+                    } else {
+                        // Se não confirmou, tenta de novo em 5 segundos
+                        if (segundos < maxSegundos) {
+                            timerVerificacao = setTimeout(executarVerificacao, 5000);
+                        }
+                    }
+                })
+                .catch(() => {
+                    // Se der erro de conexão, tenta de novo
+                    if (segundos < maxSegundos) {
+                        timerVerificacao = setTimeout(executarVerificacao, 5000);
+                    }
+                });
+        }
 
-                    setTimeout(() => {
-                        document.getElementById('btnNovaVenda').style.display = 'block';
-                    }, 1500);
-                    
-                    limparCarrinho();
-                }
-            } catch (e) {
-                // Tenta novamente
-            }
-        }, 5000); // Verifica a cada 5 segundos
+        // Inicia a verificação imediatamente
+        timerVerificacao = setTimeout(executarVerificacao, 2000);
+    }
+
+    // ============================================================
+    //  CONFIRMAR PAGAMENTO
+    // ============================================================
+    function confirmarPagamento() {
+        if (vendaConfirmada) return;
+        vendaConfirmada = true;
+        clearTimeout(timerVerificacao);
+        clearInterval(intervaloTempo);
+
+        document.getElementById('statusPagamento').className = 'status-pago';
+        document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
+        document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
+        document.getElementById('qrContainer').classList.add('confirmed');
+
+        const checkBox = document.getElementById('checkWritingContainer');
+        checkBox.classList.add('visivel');
+        const path = checkBox.querySelector('.check-path');
+        path.style.animation = 'none';
+        path.offsetHeight;
+        path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
+
+        setTimeout(() => {
+            document.getElementById('btnNovaVenda').style.display = 'block';
+        }, 1500);
+        
+        limparCarrinho();
     }
 
     function copiarPix() {
@@ -348,7 +406,8 @@
 
     function cancelarPedido() {
         if (confirm("Deseja cancelar este pedido?")) {
-            clearInterval(timerVerificacao);
+            clearTimeout(timerVerificacao);
+            clearInterval(intervaloTempo);
             navegar('home');
             limparCarrinho();
         }
