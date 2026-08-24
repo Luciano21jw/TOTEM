@@ -143,10 +143,7 @@
 </div>
 
 <script>
-    // ============================================================
-    //  COLE O SEU LINK DO WEB APP AQUI ( /exec )
-    // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpNQgxyoWb9zl60dR1geFnhNxfMwqJfBAveObwRI6HKXGlPm2vTeFlNCO4oHkXStLw/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
 
     let carrinho = [];
     let produtos = [];
@@ -233,7 +230,6 @@
         document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    // Agora vai direto para o pagamento (SEM pedir WhatsApp)
     async function irParaPagamento() {
         if (carrinho.length === 0) { alert("Adicione itens!"); return; }
 
@@ -244,8 +240,8 @@
 
         const pedidoData = {
             nome: "Cliente Totem",
-            telefone: "0000000000", // SEM WHATSAPP
-            email: "", // SEM EMAIL
+            telefone: "0000000000",
+            email: "",
             endereco: "Retirada no balcão",
             produto: itensStr,
             qty: carrinho.length,
@@ -295,7 +291,7 @@
         if (timerVerificacao) clearInterval(timerVerificacao);
         
         let segundos = 0;
-        const maxSegundos = 300; // 5 MINUTOS
+        const maxSegundos = 300; // 5 minutos
 
         const intervaloTempo = setInterval(() => {
             segundos++;
