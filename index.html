@@ -166,7 +166,7 @@
 
 <script>
     // ============================================================
-    //  COLE SEU LINK /exec AQUI (NÃO TEM NENHUM DADO FIXO, TUDO VEM DA PLANILHA)
+    //  COLE AQUI O SEU LINK DO WEB APP ( /exec )
     // ============================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
 
@@ -189,55 +189,28 @@
     });
 
     // ============================================================
-    //  CONEXÃO VIA JSONP (Para falar com o seu Apps Script)
-    // ============================================================
-    function jsonp(url, callbackName) {
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                delete window[callbackName];
-                reject(new Error("Tempo esgotado"));
-            }, 10000);
-
-            window[callbackName] = function(data) {
-                clearTimeout(timeout);
-                resolve(data);
-                delete window[callbackName];
-            };
-
-            const script = document.createElement('script');
-            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
-            script.onerror = () => {
-                clearTimeout(timeout);
-                delete window[callbackName];
-                reject(new Error("Erro de conexão"));
-            };
-            document.body.appendChild(script);
-        });
-    }
-
-    // ============================================================
-    //  CARREGAR PRODUTOS (100% da planilha)
+    //  CARREGAR PRODUTOS (Puxa do seu doGet original)
     // ============================================================
     async function carregarProdutos() {
         try {
-            // Chama a ação exata do seu Apps Script: action=getProdutos
-            const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
+            const resposta = await fetch(`${SCRIPT_URL}?api=produtos`);
+            const dados = await resposta.json();
             
-            if (data && !data.erro && Array.isArray(data) && data.length > 0) {
-                // Converte a linha da planilha para o formato do totem
-                produtos = data.map(p => ({
-                    nome: p[1],                // Coluna B
-                    preco: parseFloat(p[2]),   // Coluna C
-                    imagem: p[3],              // Coluna D
-                    status: p[4],              // Coluna E
-                    categoria: p[5] || "Geral" // Coluna F
+            if (dados.success && dados.data) {
+                // Formato do seu Apps Script: Array de arrays (linhas da planilha)
+                // Coluna 0: ID, Coluna 1: Nome, Coluna 2: Preço, Coluna 3: Imagem, Coluna 4: Status, Coluna 5: Categoria
+                produtos = dados.data.map(p => ({
+                    id: p[0],
+                    nome: p[1],
+                    preco: parseFloat(p[2]),
+                    imagem: p[3],
+                    status: p[4],
+                    categoria: p[5] || "Geral"
                 }));
             } else {
-                // Se não houver nada na planilha, esvazia o cardápio
                 produtos = [];
             }
         } catch (e) {
-            // Se a API não responder, esvazia o cardápio (não coloca nada fixo)
             produtos = [];
         }
         criarBarraCategorias();
@@ -246,12 +219,12 @@
 
     function criarBarraCategorias() {
         const barra = document.getElementById('barraCategorias');
-        // Pega categorias únicas da planilha (Lanches, Bebidas, Sobremesas, Acompanhamentos)
-        const categorias = [...new Set(produtos.map(p => p.categoria || 'Geral'))];
+        // Só mostra categorias que existem de verdade na planilha
+        const categorias = [...new Set(produtos.filter(p => p.status === "ATIVO").map(p => p.categoria))];
         
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrarCategoria('Todos', this)">Todos</button>`;
         categorias.forEach(cat => {
-            barra.innerHTML += `<button class="cat-btn" onclick="filtrarCategoria('${cat}', this)">${cat}</button>`;
+            if(cat) barra.innerHTML += `<button class="cat-btn" onclick="filtrarCategoria('${cat}', this)">${cat}</button>`;
         });
     }
 
@@ -266,8 +239,8 @@
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
         
-        // Filtra apenas os produtos com status ATIVO
-        const ativos = produtos.filter(p => p.status && p.status.toUpperCase() === "ATIVO");
+        // Só exibe produtos ATIVOS
+        const ativos = produtos.filter(p => p.status === "ATIVO");
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
 
         filtrados.forEach((produto) => {
@@ -276,7 +249,7 @@
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
-                <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
+                <div class="preco-produto">R$ ${produto.preco.toFixed(2)}</div>
                 <button class="adicionar-btn" onclick="adicionarAoCarrinho('${produto.nome}')">Adicionar</button>
             `;
             container.appendChild(div);
@@ -284,7 +257,7 @@
     }
 
     function adicionarAoCarrinho(nome) {
-        const produto = produtos.find(p => p.nome === nome);
+        const produto = produtos.find(p => p.nome === nome && p.status === "ATIVO");
         if (produto) {
             carrinho.push(produto);
             atualizarTotal();
@@ -314,7 +287,7 @@
     }
 
     // ============================================================
-    //  REGISTRAR VENDA E GERAR PIX (action=registrarVenda)
+    //  SALVAR PEDIDO E GERAR PIX (Usa o doPost do seu script)
     // ============================================================
     async function irParaPagamento() {
         let total = 0;
@@ -322,19 +295,33 @@
         carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
         totalPedido = total;
 
-        const callbackName = 'cb_venda_' + Date.now();
-        
+        const pedidoData = {
+            nome: "Cliente Totem",
+            telefone: whatsappCliente,
+            email: "", // SEM EMAIL
+            endereco: "Retirada no balcão",
+            produto: itensStr,
+            qty: carrinho.length,
+            amount: total.toFixed(2)
+        };
+
         try {
-            // Usa o formato exato do seu script JSONP
-            const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=${encodeURIComponent(whatsappCliente)}&descricao=${encodeURIComponent(itensStr)}`;
-            
-            const resultado = await jsonp(url, callbackName);
-            
-            if (resultado && resultado.success) {
-                pedidoAtual = resultado;
-                mostrarTelaPix(resultado.pixCode, total);
+            // Envia via doPost (api: salvarpedido)
+            const resposta = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
+            });
+            const dados = await resposta.json();
+
+            if (dados.success) {
+                pedidoAtual = dados.data;
+                if (pedidoAtual.pixCode) {
+                    mostrarTelaPix(pedidoAtual.pixCode, total);
+                } else {
+                    alert("Erro ao gerar PIX. Verifique a Chave PIX na planilha.");
+                }
             } else {
-                alert("Erro: " + (resultado?.erro || resultado?.mensagem || "Erro desconhecido"));
+                alert("Erro: " + (dados.mensagem || "Erro desconhecido"));
             }
         } catch (e) {
             alert("Erro de conexão. Verifique o link do script.");
@@ -342,13 +329,13 @@
     }
 
     // ============================================================
-    //  MOSTRAR PIX E INICIAR VERIFICAÇÃO AUTOMÁTICA
+    //  MOSTRAR PIX E VERIFICAR PAGAMENTO (Usa doGet: api=pedido)
     // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
         document.getElementById('displayCliente').innerText = whatsappCliente;
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
-        
+
         document.getElementById('statusPagamento').className = 'status-pendente';
         document.getElementById('statusPagamento').innerText = "⏳ Aguardando pagamento...";
         document.getElementById('temporizador').innerText = "⏱️ Verificando automaticamente...";
@@ -383,11 +370,11 @@
 
         timerVerificacao = setInterval(async () => {
             try {
-                // Usa action=verificarPagamento do seu script
-                const callbackName = 'cb_verif_' + Date.now();
-                const resultado = await jsonp(`${SCRIPT_URL}?action=verificarPagamento`, callbackName);
+                // Verifica se o status mudou para PAGO na planilha
+                const resposta = await fetch(`${SCRIPT_URL}?api=pedido&id=${pedidoAtual.orderId}`);
+                const dados = await resposta.json();
                 
-                if (resultado && resultado.encontrado && resultado.confirmado) {
+                if (dados.success && dados.data && dados.data.status === "PAGO") {
                     clearInterval(timerVerificacao);
                     clearInterval(intervaloTempo);
                     
@@ -403,6 +390,7 @@
                     path.offsetHeight;
                     path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
 
+                    // Libera o botão de enviar WhatsApp
                     document.getElementById('btnWhatsapp').style.display = 'block';
 
                     setTimeout(() => {
@@ -412,14 +400,12 @@
                     limparCarrinho();
                 }
             } catch (e) {
-                // Tenta novamente em 5 segundos
+                // Tenta novamente
             }
         }, 5000);
     }
 
-    // ============================================================
-    //  ENVIAR CONFIRMAÇÃO VIA WHATSAPP
-    // ============================================================
+    // Envia mensagem de confirmação no WhatsApp
     function enviarMensagemWhatsApp() {
         if (!whatsappCliente || !window.pixCodeGlobal) return;
         const msg = `✅ *PAGAMENTO CONFIRMADO!*\n\nPedido liberado com sucesso!\nValor: R$ ${totalPedido.toFixed(2).replace('.', ',')}`;
