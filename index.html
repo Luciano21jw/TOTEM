@@ -3,349 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Totem McDia Feliz</title>
-    <!-- Importando fonte parecida com a do McDonald's -->
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    
+    <title>Totem Sabor Total</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --amarelo: #FFC72C;
-            --vermelho: #DA291C;
-            --preto: #27251F;
-            --branco: #FFFFFF;
-            --cinza-claro: #F5F5F5;
-            --cinza-escuro: #666;
+            --cor-primaria: #FF5733; /* Laranja */
+            --cor-secundaria: #2C3E50; /* Azul Escuro */
+            --cor-fundo: #F4F4F4;
+            --cor-branca: #FFFFFF;
+            --cor-verde: #28A745;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-            user-select: none; /* Impede seleção de texto, como num totem */
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; user-select: none; }
+        body { background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
 
-        body {
-            background-color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Estrutura do Totem */
         .totem {
-            width: 420px;
-            height: 800px;
-            background-color: var(--branco);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            border: 5px solid var(--preto); /* Moldura preta estilo totem */
+            width: 420px; height: 850px; background-color: var(--cor-fundo);
+            border-radius: 20px; position: relative; overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8); border: 8px solid var(--cor-secundaria);
+            display: flex; flex-direction: column;
         }
 
-        /* Sistema de Telas */
-        .tela {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            transition: opacity 0.3s;
-        }
-
-        .tela.ativa {
-            display: flex;
-        }
+        .tela { display: none; flex-direction: column; height: 100%; width: 100%; }
+        .tela.ativa { display: flex; }
 
         /* TELA 1: HOME */
-        #home {
-            background-color: var(--amarelo);
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .logo {
-            font-family: 'Baloo 2', cursive;
-            font-size: 60px;
-            color: var(--vermelho);
-            margin-top: 20px;
-        }
-
-        .titulo-campanha {
-            font-family: 'Baloo 2', cursive;
-            font-size: 40px;
-            font-weight: 800;
-            color: var(--preto);
-            line-height: 1;
-        }
-
-        .titulo-campanha span {
-            color: var(--vermelho);
-        }
-
-        .imagem-central {
-            font-size: 100px;
-            margin: 20px 0;
-            /* Aqui entraria a imagem real do sanduíche e casa */
-        }
-
-        .data-evento {
-            background-color: var(--branco);
-            padding: 5px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .botao-iniciar {
-            width: 100%;
-            background-color: #00457C; /* Azul escuro estilo McD */
-            color: var(--branco);
-            border: none;
-            padding: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .botao-iniciar:hover {
-            background-color: #003057;
-        }
+        #home { background: linear-gradient(135deg, var(--cor-primaria), #ff8c42); align-items: center; justify-content: center; text-align: center; color: white; padding: 20px; }
+        .logo-marca { font-size: 50px; font-weight: 800; margin-bottom: 20px; text-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+        .banner-home { font-size: 80px; margin-bottom: 30px; }
+        .botao-iniciar { background: var(--cor-branca); color: var(--cor-secundaria); border: none; padding: 20px 40px; font-size: 20px; font-weight: 800; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
 
         /* TELA 2: ESCOLHA */
-        #escolha {
-            background-color: var(--branco);
-            align-items: center;
-            padding-top: 50px;
-        }
-
-        .titulo-escolha {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 40px;
-            color: var(--preto);
-        }
-
-        .opcoes {
-            display: flex;
-            gap: 20px;
-            width: 90%;
-        }
-
-        .botao-opcao {
-            flex: 1;
-            height: 300px;
-            background-color: var(--cinza-claro);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--preto);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .botao-opcao:hover {
-            background-color: #e0e0e0;
-        }
-
-        .icone-opcao {
-            font-size: 80px;
-            background-color: var(--branco);
-            padding: 20px;
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        #escolha { background-color: var(--cor-branca); align-items: center; padding-top: 50px; }
+        .titulo-escolha { font-size: 28px; font-weight: 800; color: var(--cor-secundaria); margin-bottom: 40px; }
+        .opcoes { display: flex; gap: 15px; width: 90%; }
+        .botao-opcao { flex: 1; height: 250px; background-color: var(--cor-fundo); border: 3px solid #ddd; border-radius: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; font-size: 16px; font-weight: 800; color: var(--cor-secundaria); transition: 0.2s; }
+        .botao-opcao:hover { border-color: var(--cor-primaria); background-color: #fff; }
+        .icone-opcao { font-size: 70px; background: white; padding: 20px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
         /* TELA 3: CARDÁPIO */
-        #cardapio {
-            background-color: var(--cinza-claro);
-        }
+        #cardapio { background-color: var(--cor-fundo); }
+        .header-cardapio { background-color: var(--cor-secundaria); color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; position: relative; }
+        .botao-voltar { position: absolute; left: 15px; top: 15px; background: none; border: 2px solid white; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        
+        .area-produtos { flex: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+        .produto { background: var(--cor-branca); border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; }
+        .icone-produto { font-size: 45px; margin: 10px auto; }
+        .nome-produto { font-weight: bold; font-size: 13px; color: var(--cor-secundaria); margin-bottom: 5px; }
+        .preco-produto { font-size: 16px; font-weight: 800; color: var(--cor-primaria); margin-bottom: 8px; }
+        .adicionar-btn { background: var(--cor-secundaria); color: white; border: none; border-radius: 6px; padding: 8px; cursor: pointer; font-weight: bold; }
 
-        .header-cardapio {
-            background-color: var(--vermelho);
-            color: var(--branco);
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            position: relative;
-        }
+        /* RODAPÉ CARDÁPIO / CARRINHO */
+        .rodape-cardapio { background: var(--cor-branca); padding: 12px; border-top: 2px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
+        .linha-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--cor-secundaria); }
+        .botoes-rodape { display: flex; gap: 10px; }
+        .botao-limpar { flex: 1; background: #eee; border: none; border-radius: 5px; padding: 10px; cursor: pointer; color: #333; font-weight: bold; }
+        .botao-finalizar { flex: 2; background: var(--cor-verde); color: white; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: 800; }
 
-        .botao-voltar {
-            position: absolute;
-            left: 20px;
-            top: 20px;
-            background: none;
-            border: 2px solid var(--branco);
-            color: var(--branco);
-            padding: 5px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .area-produtos {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .produto {
-            background: var(--branco);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .produto img, .produto .icone-produto {
-            font-size: 50px;
-            margin: 10px auto;
-        }
-
-        .nome-produto {
-            font-weight: bold;
-            font-size: 14px;
-            color: var(--preto);
-            margin-bottom: 5px;
-        }
-
-        .preco-produto {
-            color: var(--vermelho);
-            font-weight: bold;
-        }
-
-        .rodape-cardapio {
-            background: var(--branco);
-            padding: 15px 20px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .total-carrinho {
-            font-size: 18px;
-        }
-
-        .botao-finalizar {
-            background: var(--vermelho);
-            color: var(--branco);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        /* TELA 4: SUCESSO */
+        #sucesso { background: var(--cor-verde); color: white; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .icone-sucesso { font-size: 100px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <div class="totem">
     
-    <!-- TELA 1: INÍCIO -->
+    <!-- TELA HOME -->
     <div id="home" class="tela ativa">
-        <div class="logo">M</div>
-        <h1 class="titulo-campanha">McDia<br><span>Feliz</span> M</h1>
-        <div class="imagem-central">🍔 🏠 🧸</div> <!-- Substituir por imagem real -->
-        <p>SATÁBADO, 23 DE AGOSTO</p>
-        <button class="botao-iniciar" onclick="irParaEscolha()">Toque para começar</button>
+        <div class="logo-marca">SABOR TOTAL</div>
+        <div class="banner-home">🍔🧡</div>
+        <p style="margin-bottom: 30px;">Peça aqui com cartão ou dinheiro</p>
+        <button class="botao-iniciar" onclick="navegar('escolha')">TOQUE PARA COMEÇAR</button>
     </div>
 
-    <!-- TELA 2: ESCOLHA -->
+    <!-- TELA ESCOLHA -->
     <div id="escolha" class="tela">
-        <h2 class="titulo-escolha">Escolha</h2>
+        <h2 class="titulo-escolha">Como deseja receber?</h2>
         <div class="opcoes">
-            <button class="botao-opcao" onclick="irParaCardapio()">
-                <div class="icone-opcao">🍔🍟</div>
-                <span>Para comer aqui</span>
+            <button class="botao-opcao" onclick="navegar('cardapio')">
+                <div class="icone-opcao">🍽️</div>
+                Comer no local
             </button>
-            <button class="botao-opcao" onclick="irParaCardapio()">
+            <button class="botao-opcao" onclick="navegar('cardapio')">
                 <div class="icone-opcao">🛍️</div>
-                <span>Para levar</span>
+                Para levar
             </button>
         </div>
     </div>
 
-    <!-- TELA 3: CARDÁPIO -->
+    <!-- TELA CARDÁPIO -->
     <div id="cardapio" class="tela">
         <div class="header-cardapio">
-            <button class="botao-voltar" onclick="voltarParaEscolha()">&larr; Voltar</button>
-            BATATA C/ QUEIJOS
+            <button class="botao-voltar" onclick="navegar('escolha')">&larr; Voltar</button>
+            NOSSO CARDÁPIO
         </div>
-        <div class="area-produtos">
-            <!-- Produtos Simulados -->
-            <div class="produto">
-                <div class="icone-produto">🍔</div>
-                <div class="nome-produto">Big Mac</div>
-                <div class="preco-produto">R$ 28,90</div>
-            </div>
-            <div class="produto">
-                <div class="icone-produto">🍟</div>
-                <div class="nome-produto">Batata Média</div>
-                <div class="preco-produto">R$ 12,50</div>
-            </div>
-            <div class="produto">
-                <div class="icone-produto">🥤</div>
-                <div class="nome-produto">Refrigerante</div>
-                <div class="preco-produto">R$ 8,00</div>
-            </div>
-            <div class="produto">
-                <div class="icone-produto">🍦</div>
-                <div class="nome-produto">McFlurry</div>
-                <div class="preco-produto">R$ 15,90</div>
-            </div>
+        
+        <div class="area-produtos" id="listaProdutos">
+            <!-- Os produtos da planilha aparecerão aqui -->
+            <p style="grid-column: span 2; text-align: center; margin-top: 50px;">Carregando cardápio...</p>
         </div>
+
         <div class="rodape-cardapio">
-            <span class="total-carrinho">Total: R$ 0,00</span>
-            <button class="botao-finalizar">Finalizar Pedido</button>
+            <div class="linha-total">
+                <span>Total:</span>
+                <span id="totalCarrinho">R$ 0,00</span>
+            </div>
+            <div class="botoes-rodape">
+                <button class="botao-limpar" onclick="limparCarrinho()">Limpar</button>
+                <button class="botao-finalizar" onclick="finalizarPedido()">Finalizar Pedido</button>
+            </div>
         </div>
+    </div>
+
+    <!-- TELA SUCESSO -->
+    <div id="sucesso" class="tela">
+        <div class="icone-sucesso">✅</div>
+        <h2>Pedido Realizado!</h2>
+        <p style="margin-top: 15px;">Retire seu pedido no balcão.</p>
+        <button class="botao-limpar" style="margin-top: 30px; width: 60%;" onclick="navegar('home')">Voltar ao Início</button>
     </div>
 
 </div>
 
 <script>
-    // Funções para navegação entre as telas
-    function mostrarTela(idTela) {
-        document.querySelectorAll('.tela').forEach(tela => {
-            tela.classList.remove('ativa');
+    // ==========================================
+    // CONFIGURAÇÃO DA PLANILHA (IMPORTANTE)
+    // Cole aqui o link que você gerou no Google Sheets
+    const URL_DA_PLANILHA = "LINK_DA_SUA_PLANILHA_AQUI"; 
+    // ==========================================
+
+    let carrinho = [];
+    let produtos = [];
+
+    // Função para buscar dados da planilha do Google
+    async function carregarPlanilha() {
+        try {
+            // O Google Sheets retorna os dados em formato CSV
+            const resposta = await fetch(URL_DA_PLANILHA);
+            const csv = await resposta.text();
+
+            // Converte o CSV em um array de objetos
+            const linhas = csv.split('\n').filter(linha => linha.trim() !== '');
+            const cabecalhos = linhas[0].split(',');
+
+            produtos = linhas.slice(1).map(linha => {
+                const colunas = linha.split(',');
+                return {
+                    nome: colunas[0]?.trim(),
+                    preco: parseFloat(colunas[1]?.replace('.', '.').trim()),
+                    icone: colunas[2]?.trim() || '🍽️',
+                    categoria: colunas[3]?.trim() || 'Geral'
+                };
+            }).filter(p => !isNaN(p.preco)); // Filtra linhas vazias ou com preço inválido
+
+            renderizarCardapio();
+
+        } catch (erro) {
+            console.error("Erro ao carregar planilha:", erro);
+            document.getElementById('listaProdutos').innerHTML = '<p style="grid-column: span 2; text-align: center; color: red; margin-top: 50px;">Erro ao carregar. Verifique o link da planilha.</p>';
+        }
+    }
+
+    // Função para desenhar os produtos na tela
+    function renderizarCardapio() {
+        const container = document.getElementById('listaProdutos');
+        container.innerHTML = '';
+
+        produtos.forEach((produto, index) => {
+            const div = document.createElement('div');
+            div.className = 'produto';
+            div.innerHTML = `
+                <div class="icone-produto">${produto.icone}</div>
+                <div class="nome-produto">${produto.nome}</div>
+                <div class="preco-produto">R$ ${produto.preco.toFixed(2)}</div>
+                <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
+            `;
+            container.appendChild(div);
         });
+    }
+
+    // Lógica do Carrinho
+    function adicionarAoCarrinho(index) {
+        const produto = produtos[index];
+        carrinho.push(produto);
+        atualizarTotal();
+    }
+
+    function limparCarrinho() {
+        carrinho = [];
+        atualizarTotal();
+    }
+
+    function atualizarTotal() {
+        let total = 0;
+        carrinho.forEach(item => total += item.preco);
+        document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
+    }
+
+    function finalizarPedido() {
+        if (carrinho.length === 0) {
+            alert("Adicione pelo menos um item ao carrinho!");
+            return;
+        }
+        // Aqui você poderia enviar o pedido para um sistema. Por enquanto só mostra a tela de sucesso
+        navegar('sucesso');
+        limparCarrinho();
+    }
+
+    // Navegação entre telas
+    function navegar(idTela) {
+        document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
         document.getElementById(idTela).classList.add('ativa');
     }
 
-    function irParaEscolha() {
-        mostrarTela('escolha');
-    }
-
-    function irParaCardapio() {
-        mostrarTela('cardapio');
-    }
-
-    function voltarParaEscolha() {
-        mostrarTela('escolha');
-    }
+    // Iniciar o sistema
+    window.onload = carregarPlanilha;
 </script>
 
 </body>
