@@ -166,19 +166,9 @@
 
 <script>
     // ============================================================
-    //  CONFIGURAÇÃO - COLE SEU LINK /exec AQUI
+    //  COLE SEU LINK /exec AQUI (NÃO TEM NENHUM DADO FIXO, TUDO VEM DA PLANILHA)
     // ============================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
-
-    // ============================================================
-    //  PRODUTOS DE FALLBACK (Caso a API demore a responder)
-    // ============================================================
-    const PRODUTOS_FALLBACK = [
-        { nome: 'X-Burger', preco: 25.90, imagem: '', categoria: 'Lanches' },
-        { nome: 'Batata Frita', preco: 12.50, imagem: '', categoria: 'Acompanhamentos' },
-        { nome: 'Refrigerante', preco: 8.00, imagem: '', categoria: 'Bebidas' },
-        { nome: 'Milkshake', preco: 15.90, imagem: '', categoria: 'Sobremesas' }
-    ];
 
     let carrinho = [];
     let produtos = [];
@@ -199,7 +189,7 @@
     });
 
     // ============================================================
-    //  CONEXÃO VIA JSONP (Igual ao seu script original)
+    //  CONEXÃO VIA JSONP (Para falar com o seu Apps Script)
     // ============================================================
     function jsonp(url, callbackName) {
         return new Promise((resolve, reject) => {
@@ -226,23 +216,29 @@
     }
 
     // ============================================================
-    //  CARREGAR PRODUTOS
+    //  CARREGAR PRODUTOS (100% da planilha)
     // ============================================================
     async function carregarProdutos() {
         try {
+            // Chama a ação exata do seu Apps Script: action=getProdutos
             const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
+            
             if (data && !data.erro && Array.isArray(data) && data.length > 0) {
+                // Converte a linha da planilha para o formato do totem
                 produtos = data.map(p => ({
-                    nome: p[1],
-                    preco: parseFloat(p[2]),
-                    imagem: p[3],
-                    categoria: p[5] || "Geral"
+                    nome: p[1],                // Coluna B
+                    preco: parseFloat(p[2]),   // Coluna C
+                    imagem: p[3],              // Coluna D
+                    status: p[4],              // Coluna E
+                    categoria: p[5] || "Geral" // Coluna F
                 }));
             } else {
-                produtos = PRODUTOS_FALLBACK;
+                // Se não houver nada na planilha, esvazia o cardápio
+                produtos = [];
             }
         } catch (e) {
-            produtos = PRODUTOS_FALLBACK;
+            // Se a API não responder, esvazia o cardápio (não coloca nada fixo)
+            produtos = [];
         }
         criarBarraCategorias();
         renderizarCardapio();
@@ -250,7 +246,9 @@
 
     function criarBarraCategorias() {
         const barra = document.getElementById('barraCategorias');
+        // Pega categorias únicas da planilha (Lanches, Bebidas, Sobremesas, Acompanhamentos)
         const categorias = [...new Set(produtos.map(p => p.categoria || 'Geral'))];
+        
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrarCategoria('Todos', this)">Todos</button>`;
         categorias.forEach(cat => {
             barra.innerHTML += `<button class="cat-btn" onclick="filtrarCategoria('${cat}', this)">${cat}</button>`;
@@ -267,7 +265,11 @@
     function renderizarCardapio() {
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
-        const filtrados = categoriaAtiva === "Todos" ? produtos : produtos.filter(p => p.categoria === categoriaAtiva);
+        
+        // Filtra apenas os produtos com status ATIVO
+        const ativos = produtos.filter(p => p.status && p.status.toUpperCase() === "ATIVO");
+        const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
+
         filtrados.forEach((produto) => {
             const div = document.createElement('div');
             div.className = 'produto';
@@ -312,7 +314,7 @@
     }
 
     // ============================================================
-    //  REGISTRAR VENDA E GERAR PIX (Usa action=registrarVenda)
+    //  REGISTRAR VENDA E GERAR PIX (action=registrarVenda)
     // ============================================================
     async function irParaPagamento() {
         let total = 0;
@@ -323,7 +325,7 @@
         const callbackName = 'cb_venda_' + Date.now();
         
         try {
-            // Monta a URL no formato JSONP do seu script
+            // Usa o formato exato do seu script JSONP
             const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=${encodeURIComponent(whatsappCliente)}&descricao=${encodeURIComponent(itensStr)}`;
             
             const resultado = await jsonp(url, callbackName);
@@ -401,7 +403,6 @@
                     path.offsetHeight;
                     path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
 
-                    // Libera o botão do WhatsApp
                     document.getElementById('btnWhatsapp').style.display = 'block';
 
                     setTimeout(() => {
