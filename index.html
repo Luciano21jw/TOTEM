@@ -165,10 +165,8 @@
 </div>
 
 <script>
-    // ============================================================
-    //  COLE O SEU LINK DO WEB APP AQUI ( /exec )
-    // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
+    // COLE SEU LINK DO WEB APP AQUI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpNQgxyoWb9zl60dR1geFnhNxfMwqJfBAveObwRI6HKXGlPm2vTeFlNCO4oHkXStLw/exec"; 
 
     let carrinho = [];
     let produtos = [];
@@ -188,16 +186,12 @@
         e.target.value = v;
     });
 
-    // ============================================================
-    //  CARREGAR PRODUTOS (Agora lê o formato de OBJETOS)
-    // ============================================================
     async function carregarProdutos() {
         try {
             const resposta = await fetch(`${SCRIPT_URL}?api=produtos`);
             const dados = await resposta.json();
             
             if (dados.success && dados.data && dados.data.length > 0) {
-                // Formato já veio como objeto: { id, nome, preco, imagem, status, categoria }
                 produtos = dados.data;
             } else {
                 produtos = [];
@@ -211,7 +205,6 @@
 
     function criarBarraCategorias() {
         const barra = document.getElementById('barraCategorias');
-        // Só mostra categorias que existem de verdade na planilha
         const categorias = [...new Set(produtos.filter(p => p.status === "ATIVO").map(p => p.categoria))];
         
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrarCategoria('Todos', this)">Todos</button>`;
@@ -231,28 +224,38 @@
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
         
-        // Só exibe produtos ATIVOS
         const ativos = produtos.filter(p => p.status === "ATIVO");
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
 
-        filtrados.forEach((produto) => {
+        filtrados.forEach((produto, index) => {
             const div = document.createElement('div');
             div.className = 'produto';
+            // Usando o índice exato para evitar problemas com nomes repetidos
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
                 <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
-                <button class="adicionar-btn" onclick="adicionarAoCarrinho('${produto.nome}')">Adicionar</button>
+                <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
             `;
             container.appendChild(div);
         });
     }
 
-    function adicionarAoCarrinho(nome) {
-        const produit = produits.find(p => p.nome === nome && p.status === "ATIVO");
-        if (produit) {
-            carrinho.push(produit);
+    // Usando o índice do array filtrado, garantindo que SEMPRE vai encontrar o produto
+    function adicionarAoCarrinho(index) {
+        const ativos = produtos.filter(p => p.status === "ATIVO");
+        const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
+        const produto = filtrados[index];
+
+        if (produto) {
+            carrinho.push(produto);
             atualizarTotal();
+            // Feedback visual rápido
+            const botoes = document.querySelectorAll('.adicionar-btn');
+            botoes[index].innerText = "✓ Adicionado";
+            setTimeout(() => {
+                if (botoes[index]) botoes[index].innerText = "Adicionar";
+            }, 1000);
         }
     }
 
@@ -278,9 +281,6 @@
         irParaPagamento();
     }
 
-    // ============================================================
-    //  SALVAR PEDIDO E GERAR PIX (Usa doPost original)
-    // ============================================================
     async function irParaPagamento() {
         let total = 0;
         let itensStr = "";
@@ -290,7 +290,7 @@
         const pedidoData = {
             nome: "Cliente Totem",
             telefone: whatsappCliente,
-            email: "", // SEM EMAIL
+            email: "",
             endereco: "Retirada no balcão",
             produto: itensStr,
             qty: carrinho.length,
@@ -319,9 +319,6 @@
         }
     }
 
-    // ============================================================
-    //  MOSTRAR PIX E VERIFICAR PAGAMENTO
-    // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
         document.getElementById('displayCliente').innerText = whatsappCliente;
