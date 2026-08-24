@@ -131,7 +131,6 @@
       margin-top: 40px;
     }
 
-    /* MODAL DE SENHA */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -271,7 +270,6 @@
     <p class="subtitle">Sistema de Pedidos Fast-Food</p>
     
     <div class="cards">
-      <!-- CARTAO CLIENTE -->
       <a href="?page=cliente" class="card cliente">
         <span class="icon">📱</span>
         <h2>Cliente</h2>
@@ -279,7 +277,6 @@
         <span class="badge">NOVO PEDIDO</span>
       </a>
       
-      <!-- CARTAO RESTAURANTE (COM CADEADO) -->
       <div class="card restaurante" onclick="abrirModalSenha()">
         <span class="cadeado">🔒</span>
         <span class="icon">👨‍🍳</span>
@@ -292,7 +289,6 @@
     <footer>© 2026 ASV Restaurante • Sistema de Pedidos</footer>
   </div>
 
-  <!-- MODAL DE SENHA -->
   <div class="modal-overlay" id="modalSenha">
     <div class="modal-senha">
       <span class="icon">🔐</span>
@@ -311,10 +307,8 @@
   </div>
 
   <script>
-    // ===== SENHA CORRETA =====
     const SENHA_CORRETA = '142597';
 
-    // ===== ABRIR MODAL =====
     function abrirModalSenha() {
       document.getElementById('modalSenha').classList.add('active');
       document.getElementById('inputSenha').value = '';
@@ -324,33 +318,26 @@
       }, 300);
     }
 
-    // ===== FECHAR MODAL =====
     function fecharModalSenha() {
       document.getElementById('modalSenha').classList.remove('active');
       document.getElementById('erroSenha').classList.remove('visivel');
     }
 
-    // ===== VERIFICAR SENHA =====
     function verificarSenha() {
       var senha = document.getElementById('inputSenha').value.trim();
       
       if (senha === SENHA_CORRETA) {
-        // Senha correta - redireciona
         window.location.href = '?page=restaurante';
       } else {
-        // Senha incorreta
         document.getElementById('erroSenha').classList.add('visivel');
         document.getElementById('inputSenha').value = '';
         document.getElementById('inputSenha').focus();
-        
-        // Tenta novamente após erro
         setTimeout(function() {
           document.getElementById('erroSenha').classList.remove('visivel');
         }, 3000);
       }
     }
 
-    // ===== ENTER PARA CONFIRMAR =====
     document.getElementById('inputSenha').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         verificarSenha();
@@ -360,7 +347,6 @@
       }
     });
 
-    // ===== CLICK FORA DO MODAL =====
     document.getElementById('modalSenha').addEventListener('click', function(e) {
       if (e.target === this) {
         fecharModalSenha();
