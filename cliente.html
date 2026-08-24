@@ -16,7 +16,6 @@
       min-height: 100vh;
     }
 
-    /* HEADER */
     header {
       background: linear-gradient(135deg, #e31837, #c41230);
       padding: 14px 20px;
@@ -94,14 +93,12 @@
       background: rgba(255,255,255,0.25);
     }
 
-    /* CONTAINER */
     .container {
       max-width: 1100px;
       margin: 0 auto;
       padding: 16px 20px;
     }
 
-    /* CATEGORIAS */
     .categorias {
       display: flex;
       gap: 8px;
@@ -134,7 +131,6 @@
       color: #fff;
     }
 
-    /* PRODUTOS */
     .produtos-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -240,7 +236,6 @@
       text-align: center;
     }
 
-    /* CARRINHO MODAL */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -388,7 +383,6 @@
       margin-bottom: 12px;
     }
 
-    /* PEDIDO CONFIRMADO */
     .pedido-confirmado {
       text-align: center;
       padding: 20px;
@@ -477,7 +471,6 @@
       background: #c41230;
     }
 
-    /* NOTIFICAÇÃO */
     .notification {
       position: fixed;
       bottom: 20px;
@@ -497,7 +490,6 @@
     .notification.error { background: #dc3545; color: #fff; }
     .notification.info { background: #17a2b8; color: #fff; }
 
-    /* LOADER */
     #loader {
       position: fixed;
       top: 0;
@@ -522,7 +514,6 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* RESPONSIVO */
     @media (max-width: 600px) {
       .produtos-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -550,7 +541,6 @@
     <div class="spinner"></div>
   </div>
 
-  <!-- HEADER -->
   <header>
     <div class="logo">
       🍔 ASV
@@ -565,12 +555,10 @@
   </header>
 
   <div class="container">
-    <!-- CATEGORIAS -->
     <div class="categorias" id="categorias">
       <button class="cat-btn active" data-cat="todos" onclick="filtrarCategoria('todos')">📋 Todos</button>
     </div>
 
-    <!-- PRODUTOS -->
     <div class="produtos-grid" id="produtosContainer">
       <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1;">
         ⏳ Carregando...
@@ -578,7 +566,6 @@
     </div>
   </div>
 
-  <!-- CARRINHO MODAL -->
   <div class="modal-overlay" id="modalCarrinho">
     <div class="modal-cart">
       <div class="header">
@@ -590,18 +577,15 @@
   </div>
 
   <script>
-    // ===== CONFIGURAÇÃO =====
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbxpxkZ6V4gcVE5NHuTOQhX6356jnhIm-V7RXd29taee4TPDK1x33C7zFPgBLFQ4WzcN/exec';
     const API_URL = window.location.href.split('?')[0];
-    const BASE_URL = API_URL.split('/exec')[0] + '/exec';
 
-    // ===== VARIÁVEIS =====
     var carrinho = [];
     var produtos = [];
     var categoriaAtual = 'todos';
     var pedidoAtual = null;
     var timerStatus = null;
 
-    // ===== CARREGAR PRODUTOS =====
     async function carregarProdutos() {
       try {
         const response = await fetch(BASE_URL + '?api=produtos&_=' + Date.now());
@@ -624,7 +608,6 @@
       }
     }
 
-    // ===== CATEGORIAS =====
     function carregarCategorias() {
       var cats = ['todos'];
       var categoriasSet = new Set();
@@ -645,7 +628,6 @@
       document.getElementById('categorias').innerHTML = html;
     }
 
-    // ===== FILTRAR =====
     function filtrarCategoria(cat) {
       categoriaAtual = cat;
       
@@ -656,7 +638,6 @@
       renderizarProdutos();
     }
 
-    // ===== RENDERIZAR PRODUTOS =====
     function renderizarProdutos() {
       var container = document.getElementById('produtosContainer');
       
@@ -699,7 +680,6 @@
       atualizarBadge();
     }
 
-    // ===== CARRINHO =====
     function obterQuantidadeNoCarrinho(id) {
       var item = carrinho.find(function(i) { return i.id === id; });
       return item ? item.qtd : 0;
@@ -750,7 +730,6 @@
       return carrinho.reduce(function(sum, item) { return sum + (item.preco * item.qtd); }, 0);
     }
 
-    // ===== MODAL CARRINHO =====
     function abrirCarrinho() {
       var modal = document.getElementById('modalCarrinho');
       var container = document.getElementById('cartItems');
@@ -811,12 +790,10 @@
       abrirCarrinho();
     }
 
-    // ===== FINALIZAR PEDIDO =====
     async function finalizarPedido() {
       var total = getTotalCarrinho();
       if (total === 0) return;
       
-      // Pega nome do cliente
       var nome = prompt('📝 Digite seu nome para o pedido:');
       if (!nome) return;
       
@@ -872,7 +849,6 @@
       }
     }
 
-    // ===== CONFIRMAÇÃO DO PEDIDO =====
     function mostrarConfirmacaoPedido(comanda) {
       var container = document.getElementById('produtosContainer');
       
@@ -909,7 +885,6 @@
       `;
     }
 
-    // ===== MONITORAR STATUS =====
     function iniciarMonitoramentoStatus(orderId) {
       if (timerStatus) clearInterval(timerStatus);
       
@@ -926,9 +901,7 @@
               timerStatus = null;
             }
           }
-        } catch (e) {
-          // Silencia erro
-        }
+        } catch (e) {}
       }, 3000);
     }
 
@@ -945,7 +918,6 @@
         }
       });
       
-      // Notifica mudança de status
       var labels = {
         'RECEBIDO': 'Recebido',
         'PREPARANDO': 'Preparando',
@@ -958,7 +930,6 @@
       }
     }
 
-    // ===== RESETAR =====
     function resetarCliente() {
       if (timerStatus) {
         clearInterval(timerStatus);
@@ -968,7 +939,6 @@
       carregarProdutos();
     }
 
-    // ===== NOTIFICAÇÃO =====
     function mostrarNotificacao(mensagem, tipo) {
       tipo = tipo || 'info';
       
@@ -992,22 +962,12 @@
       }, 4000);
     }
 
-    // ===== LOADER =====
     function showLoader(show) {
       document.getElementById('loader').style.display = show ? 'flex' : 'none';
     }
 
-    // ===== INICIAR =====
     carregarProdutos();
 
-    // Atualiza a cada 30 segundos (para verificar status)
-    setInterval(function() {
-      if (pedidoAtual) {
-        // Já está sendo monitorado
-      }
-    }, 30000);
-
-    // ===== ENTER PARA FECHAR MODAL =====
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') fecharCarrinho();
     });
