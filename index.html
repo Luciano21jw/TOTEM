@@ -291,7 +291,7 @@
         if (timerVerificacao) clearInterval(timerVerificacao);
         
         let segundos = 0;
-        const maxSegundos = 300; // 5 minutos
+        const maxSegundos = 300; // EXATAMENTE 5 MINUTOS
 
         const intervaloTempo = setInterval(() => {
             segundos++;
@@ -305,6 +305,7 @@
             }
         }, 1000);
 
+        // VERIFICAÇÃO COMEÇA IMEDIATAMENTE (sem esperar o timer)
         timerVerificacao = setInterval(async () => {
             try {
                 const resposta = await fetch(`${SCRIPT_URL}?api=pedido&id=${pedidoAtual.orderId}`);
@@ -335,7 +336,7 @@
             } catch (e) {
                 // Tenta novamente
             }
-        }, 5000);
+        }, 5000); // Verifica a cada 5 segundos
     }
 
     function copiarPix() {
