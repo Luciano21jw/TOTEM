@@ -52,7 +52,7 @@ A página inicial oferece duas opções de acesso:
 
 | Interface | URL |
 |-----------|-----|
-| **Página Inicial** | [https://script.google.com/macros/s/AKfycbxpxkZ6V4gcVE5NHuTOQhX6356jnhIm-V7RXd29taee4TPDK1x33C7zFPgBLFQ4WzcN/exec](https://script.google.com/macros/s/AKfycby3b1lovwkQpZ4ZZS9ydVFypRuia8JHOXqOM_RLimMInDSBMD5oStAeaoNjtGJYFI8f/exec) |
+| **Página Inicial** | [https://script.google.com/macros/s/AKfycbw1Gg6hxAFlW9c2EJWwkM1GlhvHaqDIdMX09k8JKomDvP_XrWP4nhRNfwnUjYpCV_f5/exec](https://script.google.com/macros/s/AKfycbw1Gg6hxAFlW9c2EJWwkM1GlhvHaqDIdMX09k8JKomDvP_XrWP4nhRNfwnUjYpCV_f5/exec) |
 
 
 ---
