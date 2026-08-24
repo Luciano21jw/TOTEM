@@ -144,20 +144,19 @@
 
 <script>
     // ============================================================
-    //  CONFIGURAÇÃO (Mesmo estilo do Pix Pro)
+    //  COLE AQUI O SEU LINK DO WEB APP ( /exec )
     // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybySbOAR8wbJK2bsNGpuhYHnaUoisDEeiMm1k-qmnkWm7H19Hi6xCnqb5g88NLV3D6/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/SEU_LINK_AQUI/exec"; 
 
     let carrinho = [];
     let produtos = [];
-    let pedidoAtual = null;
     let categoriaAtiva = "Todos";
     let timerVerificacao = null;
     let totalPedido = 0;
     let vendaConfirmada = false;
 
     // ============================================================
-    //  FUNÇÃO JSONP (Igual ao Pix Pro)
+    //  FUNÇÃO JSONP (Igual ao Pix Pro - para conectar com o Apps Script)
     // ============================================================
     function jsonp(url, callbackName) {
         return new Promise((resolve, reject) => {
@@ -190,15 +189,14 @@
         try {
             const data = await jsonp(`${SCRIPT_URL}?action=getProdutos`, 'cb_produtos_' + Date.now());
             
-            // O Pix Pro retorna array de arrays (linhas da planilha)
-            // Coluna 1: Nome, Coluna 2: Preço, Coluna 3: Imagem, Coluna 5: Categoria
+            // O Web App retorna array de OBJETOS
             if (data && !data.erro && Array.isArray(data) && data.length > 0) {
                 produtos = data.map(p => ({
-                    nome: p[1],
-                    preco: parseFloat(p[2]),
-                    imagem: p[3],
-                    status: p[4],
-                    categoria: p[5] || "Geral"
+                    nome: p.nome,
+                    preco: parseFloat(p.preco),
+                    imagem: p.imagem,
+                    status: p.status,
+                    categoria: p.categoria || "Geral"
                 }));
             } else {
                 produtos = [];
@@ -240,7 +238,7 @@
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
-                <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
+                <div class="preco-produto">R$ ${produto.preco.toFixed(2)}</div>
                 <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
             `;
             container.appendChild(div);
@@ -267,7 +265,7 @@
 
     function atualizarTotal() {
         let total = 0;
-        carrinho.forEach(item => total += parseFloat(item.preco));
+        carrinho.forEach(item => total += item.preco);
         document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
     }
 
@@ -279,22 +277,21 @@
 
         let total = 0;
         let itensStr = "";
-        carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
+        carrinho.forEach(item => { total += item.preco; itensStr += item.nome + ", "; });
         totalPedido = total;
 
         const callbackName = 'cb_venda_' + Date.now();
         
         try {
-            // Monta URL no formato JSONP exatamente como o Pix Pro
+            // Monta URL no formato JSONP
             const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=Cliente&descricao=${encodeURIComponent(itensStr)}`;
             
             const resultado = await jsonp(url, callbackName);
             
             if (resultado && resultado.success) {
-                pedidoAtual = resultado;
                 mostrarTelaPix(resultado.pixCode, total);
             } else {
-                alert("Erro: " + (resultado?.erro || resultado?.mensagem || "Erro desconhecido"));
+                alert("Erro: " + (resultado?.erro || "Erro desconhecido"));
             }
         } catch (e) {
             alert("Erro de conexão. Verifique o link do script.");
@@ -326,7 +323,7 @@
         if (timerVerificacao) clearInterval(timerVerificacao);
         
         let segundos = 0;
-        const maxSegundos = 300; // 5 MINUTOS
+        const maxSegundos = 300; // EXATAMENTE 5 MINUTOS
 
         const intervaloTempo = setInterval(() => {
             segundos++;
@@ -340,7 +337,7 @@
             }
         }, 1000);
 
-        // Verificação começando imediatamente (usando JSONP igual ao Pix Pro)
+        // VERIFICAÇÃO COMEÇA IMEDIATAMENTE (sem esperar o timer)
         function executarVerificacao() {
             if (vendaConfirmada) return;
             
@@ -348,7 +345,7 @@
             
             jsonp(`${SCRIPT_URL}?action=verificarPagamento`, verifyCallback)
                 .then((resultado) => {
-                    if (resultado && resultado.encontrado && resultado.confirmado) {
+                    if (resultado && resultado.confirmado) {
                         confirmarPagamento();
                     } else {
                         // Se não confirmou, tenta de novo em 5 segundos
