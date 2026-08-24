@@ -1,677 +1,475 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>👨‍🍳 Painel do Restaurante</title>
-  
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+// ============================================================
+// SISTEMA DE PEDIDOS PARA RESTAURANTE (FAST-FOOD)
+// VERSÃO COM DUAS INTERFACES
+// ============================================================
+
+// ==================== PÁGINA PRINCIPAL ====================
+function doGet(e) {
+  try {
+    var pagina = e && e.parameter ? String(e.parameter.page || "").trim().toLowerCase() : "";
+    var api = e && e.parameter ? String(e.parameter.api || "").trim().toLowerCase() : "";
+
+    // Se for API, retorna JSON
+    if (api) {
+      return processarApi(e);
+    }
+
+    // Define qual página mostrar
+    var arquivoHtml = "";
     
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: #1a1a2e;
-      color: #f0f2f5;
-      min-height: 100vh;
+    switch (pagina) {
+      case "cliente":
+        arquivoHtml = "cliente";
+        break;
+      case "restaurante":
+        arquivoHtml = "restaurante";
+        break;
+      default:
+        // Página inicial - escolha entre as interfaces
+        arquivoHtml = "index";
     }
 
-    /* HEADER */
-    header {
-      background: linear-gradient(135deg, #1a1a2e, #2d2d44);
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 3px solid #ffc107;
-    }
+    return HtmlService.createHtmlOutputFromFile(arquivoHtml)
+      .setTitle(pagina === "cliente" ? "🍔 Faça seu Pedido" : "👨‍🍳 Painel do Restaurante")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 
-    header .logo {
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+  } catch (erro) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      mensagem: "Erro: " + erro.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
-    header .logo small {
-      font-size: 12px;
-      font-weight: 400;
-      opacity: 0.7;
-    }
+// ==================== PROCESSAR API ====================
+function processarApi(e) {
+  var params = e.parameter;
+  var api = String(params.api || "").trim().toLowerCase();
+  var resultado;
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+  switch (api) {
+    case "produtos":
+      resultado = {
+        success: true,
+        data: getProdutos()
+      };
+      break;
 
-    .header-btn {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 8px 16px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    case "pedidos":
+      resultado = {
+        success: true,
+        data: getPedidosFila()
+      };
+      break;
 
-    .header-btn:hover {
-      background: rgba(255,255,255,0.15);
-    }
-
-    .badge-count {
-      background: #ffc107;
-      color: #1a1a2e;
-      border-radius: 50%;
-      padding: 2px 10px;
-      font-size: 13px;
-      font-weight: 700;
-      min-width: 24px;
-      text-align: center;
-    }
-
-    /* CONTAINER */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 16px 20px;
-    }
-
-    /* ESTATÍSTICAS */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 14px 18px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .stat-card .number {
-      font-size: 26px;
-      font-weight: 800;
-    }
-
-    .stat-card .label {
-      font-size: 12px;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-card.recebido .number { color: #ffc107; }
-    .stat-card.preparando .number { color: #17a2b8; }
-    .stat-card.pronto .number { color: #28a745; }
-    .stat-card.total .number { color: #fff; }
-
-    /* FILTROS */
-    .filtros {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .filtro-btn {
-      padding: 8px 18px;
-      border: 2px solid rgba(255,255,255,0.08);
-      border-radius: 25px;
-      background: transparent;
-      color: #888;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .filtro-btn:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
-    .filtro-btn.active {
-      border-color: #ffc107;
-      background: rgba(255,193,7,0.15);
-      color: #ffc107;
-    }
-
-    /* PEDIDOS */
-    .pedidos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
-    }
-
-    .pedido-card {
-      background: rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 18px;
-      border: 1px solid rgba(255,255,255,0.06);
-      transition: all 0.3s;
-    }
-
-    .pedido-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-      border-color: rgba(255,255,255,0.1);
-    }
-
-    .pedido-card .cabecalho {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
-
-    .pedido-card .comanda {
-      font-size: 22px;
-      font-weight: 800;
-    }
-
-    .pedido-card .comanda small {
-      font-size: 11px;
-      font-weight: 400;
-      color: #888;
-      display: block;
-    }
-
-    .status-badge {
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .status-badge.recebido { background: #ffc107; color: #000; }
-    .status-badge.preparando { background: #17a2b8; color: #fff; }
-    .status-badge.pronto { background: #28a745; color: #fff; }
-    .status-badge.entregue { background: #6c757d; color: #fff; }
-    .status-badge.cancelado { background: #dc3545; color: #fff; }
-
-    .pedido-card .cliente {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .pedido-card .telefone {
-      font-size: 13px;
-      color: #888;
-      margin-bottom: 8px;
-    }
-
-    .pedido-card .itens {
-      background: rgba(255,255,255,0.04);
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin: 8px 0;
-      font-size: 14px;
-      line-height: 1.6;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-
-    .pedido-card .itens .item {
-      display: flex;
-      justify-content: space-between;
-      padding: 2px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
-
-    .pedido-card .itens .item:last-child { border-bottom: none; }
-
-    .pedido-card .total {
-      font-size: 18px;
-      font-weight: 700;
-      color: #28a745;
-      margin: 8px 0;
-    }
-
-    .pedido-card .tempo {
-      font-size: 12px;
-      color: #888;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .pedido-card .tempo .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #28a745;
-      display: inline-block;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    .pedido-card .tempo .dot.parado {
-      animation: none;
-      background: #888;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    .pedido-card .acoes {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .pedido-card .acoes button {
-      flex: 1;
-      min-width: 60px;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .pedido-card .acoes button:hover {
-      transform: scale(1.03);
-      filter: brightness(1.1);
-    }
-
-    .btn-preparar { background: #17a2b8; color: #fff; }
-    .btn-pronto { background: #28a745; color: #fff; }
-    .btn-entregar { background: #6c757d; color: #fff; }
-    .btn-cancelar { background: #dc3545; color: #fff; }
-
-    .pedido-card.destaque {
-      border-color: #ffc107;
-      animation: destaque 2s ease-in-out;
-    }
-
-    @keyframes destaque {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,193,7,0); }
-      50% { box-shadow: 0 0 30px 5px rgba(255,193,7,0.15); }
-    }
-
-    /* NOTIFICAÇÃO */
-    .notification {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 2000;
-      padding: 14px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      animation: slideUp 0.4s ease;
-      max-width: 400px;
-    }
-
-    .notification.success { background: #28a745; color: #fff; }
-    .notification.error { background: #dc3545; color: #fff; }
-    .notification.info { background: #17a2b8; color: #fff; }
-    .notification.warning { background: #ffc107; color: #000; }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* LOADER */
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-
-    #loader .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255,255,255,0.1);
-      border-top: 4px solid #ffc107;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* RESPONSIVO */
-    @media (max-width: 768px) {
-      .pedidos-grid {
-        grid-template-columns: 1fr;
+    case "pedido":
+      var orderId = params.id || "";
+      if (!orderId) {
+        resultado = { success: false, mensagem: "ID do pedido não informado." };
+      } else {
+        var pedido = getPedidoById(orderId);
+        resultado = {
+          success: !!pedido,
+          data: pedido,
+          mensagem: pedido ? "" : "Pedido não encontrado."
+        };
       }
-      .stats {
-        grid-template-columns: repeat(2, 1fr);
+      break;
+
+    case "proxima_comanda":
+      resultado = {
+        success: true,
+        data: { comanda: getProximoNumeroComanda() }
+      };
+      break;
+
+    default:
+      resultado = {
+        success: false,
+        mensagem: "API não encontrada."
+      };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(resultado))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==================== POST ====================
+function doPost(e) {
+  try {
+    var payload = {};
+    if (e && e.postData && e.postData.contents) {
+      payload = JSON.parse(e.postData.contents);
+    }
+
+    var api = String(payload.api || "").trim().toLowerCase();
+
+    switch (api) {
+      case "novopedido":
+        return responderJson(criarPedido(payload.data));
+
+      case "atualizarstatus":
+        return responderJson(atualizarStatusPedido(payload.data));
+
+      case "cancelarpedido":
+        return responderJson(cancelarPedido(payload.data));
+
+      default:
+        return responderJson({ success: false, mensagem: "API POST não encontrada." });
+    }
+
+  } catch (erro) {
+    return responderJson({ success: false, mensagem: "Erro: " + erro.toString() });
+  }
+}
+
+function responderJson(objeto) {
+  return ContentService.createTextOutput(JSON.stringify(objeto))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==================== PRODUTOS ====================
+function getProdutos() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PRODUTOS");
+    
+    if (!sh) return getProdutosExemplo();
+    
+    var data = sh.getDataRange().getValues();
+    if (data.length <= 1) return getProdutosExemplo();
+    
+    var produtos = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (row.length >= 5 && String(row[4]).toUpperCase() === "ATIVO") {
+        produtos.push({
+          id: String(row[0]).trim(),
+          nome: String(row[1]).trim(),
+          preco: Number(row[2]) || 0,
+          imagem: String(row[3] || "").trim(),
+          categoria: String(row[5] || "Lanches").trim(),
+          descricao: String(row[6] || "").trim()
+        });
       }
-      header .logo { font-size: 16px; }
-      .filtros { gap: 6px; }
-      .filtro-btn { padding: 6px 14px; font-size: 12px; }
     }
+    
+    return produtos.length > 0 ? produtos : getProdutosExemplo();
+    
+  } catch (error) {
+    return getProdutosExemplo();
+  }
+}
 
-    @media (max-width: 480px) {
-      .container { padding: 10px; }
-      .pedido-card { padding: 14px; }
-      .stat-card .number { font-size: 22px; }
-      .pedido-card .acoes button { font-size: 11px; padding: 6px 10px; }
-    }
+function getProdutosExemplo() {
+  return [
+    { id: "BUR001", nome: "X-Burger Clássico", preco: 25.90, imagem: "🍔", categoria: "Lanches", descricao: "Pão, hambúrguer, queijo, alface e tomate" },
+    { id: "BUR002", nome: "X-Bacon", preco: 32.90, imagem: "🥓", categoria: "Lanches", descricao: "Pão, hambúrguer, queijo, bacon crocante" },
+    { id: "BUR003", nome: "X-Salada", preco: 22.90, imagem: "🥗", categoria: "Lanches", descricao: "Pão, hambúrguer, queijo, alface, tomate, cebola" },
+    { id: "BUR004", nome: "X-Tudo", preco: 39.90, imagem: "🍔", categoria: "Lanches", descricao: "Pão, hambúrguer, queijo, bacon, ovo, alface, tomate" },
+    { id: "BUR005", nome: "Veggie Burger", preco: 28.90, imagem: "🌱", categoria: "Lanches", descricao: "Pão, hambúrguer de grão-de-bico, queijo vegano, alface" },
+    { id: "BAT001", nome: "Batata Frita Pequena", preco: 12.90, imagem: "🍟", categoria: "Acompanhamentos", descricao: "Batata frita crocante" },
+    { id: "BAT002", nome: "Batata Frita Grande", preco: 18.90, imagem: "🍟", categoria: "Acompanhamentos", descricao: "Batata frita crocante com cheddar" },
+    { id: "BEB001", nome: "Refrigerante 300ml", preco: 7.90, imagem: "🥤", categoria: "Bebidas", descricao: "Coca-Cola, Guaraná, Fanta" },
+    { id: "BEB002", nome: "Refrigerante 500ml", preco: 10.90, imagem: "🥤", categoria: "Bebidas", descricao: "Coca-Cola, Guaraná, Fanta" },
+    { id: "BEB003", nome: "Suco Natural", preco: 9.90, imagem: "🧃", categoria: "Bebidas", descricao: "Laranja, Limão, Morango" },
+    { id: "SOB001", nome: "Milk Shake", preco: 14.90, imagem: "🥛", categoria: "Sobremesas", descricao: "Chocolate, Morango, Baunilha" },
+    { id: "SOB002", nome: "Torta de Maçã", preco: 8.90, imagem: "🥧", categoria: "Sobremesas", descricao: "Torta de maçã com canela" }
+  ];
+}
 
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-    ::-webkit-scrollbar-thumb { background: #ffc107; border-radius: 10px; }
-  </style>
-</head>
-<body>
-
-  <div id="loader">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- HEADER -->
-  <header>
-    <div class="logo">
-      👨‍🍳 ASV Restaurante
-      <small>| Painel de Atendimento</small>
-    </div>
-    <div class="header-actions">
-      <button class="header-btn" onclick="window.location.href='?'">🏠 Início</button>
-      <button class="header-btn" onclick="carregarPedidos()">🔄 Atualizar</button>
-      <span class="badge-count" id="statTotal">0</span>
-    </div>
-  </header>
-
-  <div class="container">
-    <!-- ESTATÍSTICAS -->
-    <div class="stats">
-      <div class="stat-card recebido">
-        <div class="number" id="statRecebidos">0</div>
-        <div class="label">📥 Recebidos</div>
-      </div>
-      <div class="stat-card preparando">
-        <div class="number" id="statPreparando">0</div>
-        <div class="label">👨‍🍳 Preparando</div>
-      </div>
-      <div class="stat-card pronto">
-        <div class="number" id="statProntos">0</div>
-        <div class="label">✅ Prontos</div>
-      </div>
-      <div class="stat-card total">
-        <div class="number" id="statTotalPedidos">0</div>
-        <div class="label">📦 Total</div>
-      </div>
-    </div>
-
-    <!-- FILTROS -->
-    <div class="filtros">
-      <button class="filtro-btn active" data-filtro="todos" onclick="aplicarFiltro('todos')">📋 Todos</button>
-      <button class="filtro-btn" data-filtro="recebido" onclick="aplicarFiltro('recebido')">📥 Recebidos</button>
-      <button class="filtro-btn" data-filtro="preparando" onclick="aplicarFiltro('preparando')">👨‍🍳 Preparando</button>
-      <button class="filtro-btn" data-filtro="pronto" onclick="aplicarFiltro('pronto')">✅ Prontos</button>
-      <button class="filtro-btn" data-filtro="entregue" onclick="aplicarFiltro('entregue')">📦 Entregues</button>
-    </div>
-
-    <!-- LISTA DE PEDIDOS -->
-    <div id="pedidosContainer">
-      <div style="text-align:center;padding:60px 20px;color:#666;">
-        <div style="font-size:48px;margin-bottom:16px;">🍔</div>
-        <h3 style="color:#888;">Carregando pedidos...</h3>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ===== CONFIGURAÇÃO =====
-    const API_URL = window.location.href.split('?')[0];
-    const BASE_URL = API_URL.split('/exec')[0] + '/exec';
-
-    // ===== VARIÁVEIS =====
+// ==================== PEDIDOS ====================
+function getPedidosFila() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PEDIDOS");
+    
+    if (!sh) return [];
+    
+    var data = sh.getDataRange().getValues();
+    if (data.length <= 1) return [];
+    
     var pedidos = [];
-    var filtroAtual = 'todos';
-    var audioContext = null;
-
-    // ===== INICIAR =====
-    document.addEventListener('DOMContentLoaded', function() {
-      carregarPedidos();
-      setInterval(carregarPedidos, 5000);
-    });
-
-    // ===== CARREGAR PEDIDOS =====
-    async function carregarPedidos() {
-      try {
-        var response = await fetch(BASE_URL + '?api=pedidos&_=' + Date.now());
-        var data = await response.json();
-        
-        if (data.success && data.data) {
-          var novosPedidos = data.data;
-          
-          // Verifica se há pedidos novos
-          if (pedidos.length > 0 && novosPedidos.length > 0) {
-            var idsAtuais = pedidos.map(function(p) { return p.id; });
-            
-            for (var i = 0; i < novosPedidos.length; i++) {
-              if (idsAtuais.indexOf(novosPedidos[i].id) === -1) {
-                // Pedido novo!
-                tocarSomNovoPedido();
-                mostrarNotificacao('📦 Novo pedido #' + novosPedidos[i].comanda, 'warning');
-                break;
-              }
-            }
-          }
-          
-          pedidos = novosPedidos;
-          renderizarPedidos();
-          atualizarStats();
-        }
-      } catch (error) {
-        console.error('Erro:', error);
-      }
-    }
-
-    // ===== RENDERIZAR =====
-    function renderizarPedidos() {
-      var container = document.getElementById('pedidosContainer');
-      var filtrados = pedidos;
+    var ordemStatus = {
+      'RECEBIDO': 0,
+      'PREPARANDO': 1,
+      'PRONTO': 2,
+      'ENTREGUE': 3,
+      'CANCELADO': 4
+    };
+    
+    for (var i = data.length - 1; i >= 1; i--) {
+      var row = data[i];
+      var status = String(row[8] || "RECEBIDO").trim().toUpperCase();
       
-      if (filtroAtual !== 'todos') {
-        filtrados = pedidos.filter(function(p) {
-          return p.status === filtroAtual.toUpperCase();
-        });
-      }
+      // Filtra cancelados para não aparecerem na fila principal
+      if (status === 'CANCELADO') continue;
       
-      if (filtrados.length === 0) {
-        container.innerHTML = `
-          <div style="text-align:center;padding:60px 20px;color:#666;">
-            <div style="font-size:48px;margin-bottom:16px;">🍔</div>
-            <h3 style="color:#888;">Nenhum pedido ${filtroAtual !== 'todos' ? 'com status "' + filtroAtual + '"' : ''}</h3>
-            <p style="color:#555;margin-top:8px;">Aguardando novos pedidos...</p>
-          </div>
-        `;
-        return;
-      }
-      
-      var html = '<div class="pedidos-grid">';
-      
-      for (var i = 0; i < filtrados.length; i++) {
-        var p = filtrados[i];
-        var statusClass = p.status.toLowerCase();
-        var isDestaque = p.status === 'RECEBIDO' && p.tempoEspera === 'Agora';
-        
-        html += `
-          <div class="pedido-card ${isDestaque ? 'destaque' : ''}" data-id="${p.id}">
-            <div class="cabecalho">
-              <div class="comanda">
-                #${p.comanda}
-                <small>${p.id}</small>
-              </div>
-              <span class="status-badge ${statusClass}">${p.statusLabel}</span>
-            </div>
-            
-            <div class="cliente">${p.nome || 'Cliente'}</div>
-            <div class="telefone">📱 ${p.telefone || 'Não informado'}</div>
-            
-            <div class="itens">
-              ${p.itens.split(',').map(function(item) {
-                return '<div class="item"><span>' + item.trim() + '</span></div>';
-              }).join('')}
-            </div>
-            
-            <div class="total">R$ ${p.valor.toFixed(2)}</div>
-            
-            <div class="tempo">
-              <span class="dot ${p.status === 'ENTREGUE' || p.status === 'CANCELADO' ? 'parado' : ''}"></span>
-              ${p.tempoEspera || 'Agora'}
-              ${p.observacao ? ' | 📝 ' + p.observacao : ''}
-            </div>
-            
-            <div class="acoes">
-              ${p.status === 'RECEBIDO' ? `
-                <button class="btn-preparar" onclick="mudarStatus('${p.id}', 'PREPARANDO')">👨‍🍳 Preparar</button>
-                <button class="btn-cancelar" onclick="mudarStatus('${p.id}', 'CANCELADO')">❌ Cancelar</button>
-              ` : ''}
-              
-              ${p.status === 'PREPARANDO' ? `
-                <button class="btn-pronto" onclick="mudarStatus('${p.id}', 'PRONTO')">✅ Pronto</button>
-                <button class="btn-cancelar" onclick="mudarStatus('${p.id}', 'CANCELADO')">❌ Cancelar</button>
-              ` : ''}
-              
-              ${p.status === 'PRONTO' ? `
-                <button class="btn-entregar" onclick="mudarStatus('${p.id}', 'ENTREGUE')">📦 Entregar</button>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }
-      
-      html += '</div>';
-      container.innerHTML = html;
-    }
-
-    // ===== ATUALIZAR ESTATÍSTICAS =====
-    function atualizarStats() {
-      var recebidos = pedidos.filter(function(p) { return p.status === 'RECEBIDO'; }).length;
-      var preparando = pedidos.filter(function(p) { return p.status === 'PREPARANDO'; }).length;
-      var prontos = pedidos.filter(function(p) { return p.status === 'PRONTO'; }).length;
-      var total = pedidos.length;
-      
-      document.getElementById('statRecebidos').textContent = recebidos;
-      document.getElementById('statPreparando').textContent = preparando;
-      document.getElementById('statProntos').textContent = prontos;
-      document.getElementById('statTotalPedidos').textContent = total;
-      document.getElementById('statTotal').textContent = total;
-    }
-
-    // ===== MUDAR STATUS =====
-    async function mudarStatus(id, novoStatus) {
-      try {
-        var response = await fetch(BASE_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            api: 'atualizarStatus',
-            data: { id: id, status: novoStatus }
-          })
-        });
-        
-        var result = await response.json();
-        
-        if (result.success) {
-          mostrarNotificacao(result.mensagem, 'success');
-          carregarPedidos();
-        } else {
-          mostrarNotificacao(result.mensagem || 'Erro ao atualizar', 'error');
-        }
-      } catch (error) {
-        mostrarNotificacao('Erro: ' + error.message, 'error');
-      }
-    }
-
-    // ===== FILTROS =====
-    function aplicarFiltro(filtro) {
-      filtroAtual = filtro;
-      
-      document.querySelectorAll('.filtro-btn').forEach(function(btn) {
-        btn.classList.toggle('active', btn.dataset.filtro === filtro);
+      pedidos.push({
+        id: String(row[0]).trim(),
+        comanda: Number(row[11] || i),
+        nome: String(row[1]).trim(),
+        telefone: String(row[2]).trim(),
+        itens: String(row[5]).trim(),
+        quantidade: Number(row[6]) || 1,
+        valor: Number(row[7]) || 0,
+        status: status,
+        statusLabel: getStatusLabel(status),
+        data: String(row[10] || ""),
+        observacao: String(row[12] || ""),
+        tempoEspera: calcularTempoEspera(row[10])
       });
-      
-      renderizarPedidos();
+    }
+    
+    // Ordena por status (RECEBIDO primeiro) e depois por data
+    pedidos.sort(function(a, b) {
+      var orderA = ordemStatus[a.status] || 99;
+      var orderB = ordemStatus[b.status] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return new Date(a.data) - new Date(b.data);
+    });
+    
+    return pedidos;
+    
+  } catch (error) {
+    Logger.log('Erro getPedidosFila: ' + error);
+    return [];
+  }
+}
+
+function getStatusLabel(status) {
+  var labels = {
+    'RECEBIDO': '📥 Recebido',
+    'PREPARANDO': '👨‍🍳 Preparando',
+    'PRONTO': '✅ Pronto',
+    'ENTREGUE': '📦 Entregue',
+    'CANCELADO': '❌ Cancelado'
+  };
+  return labels[status] || status;
+}
+
+function getStatusColor(status) {
+  var cores = {
+    'RECEBIDO': '#ffc107',
+    'PREPARANDO': '#17a2b8',
+    'PRONTO': '#28a745',
+    'ENTREGUE': '#6c757d',
+    'CANCELADO': '#dc3545'
+  };
+  return cores[status] || '#6c757d';
+}
+
+function getProximoNumeroComanda() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PEDIDOS");
+    
+    if (!sh) return 1;
+    
+    var data = sh.getDataRange().getValues();
+    if (data.length <= 1) return 1;
+    
+    var maxComanda = 0;
+    for (var i = 1; i < data.length; i++) {
+      var comanda = Number(data[i][11] || 0);
+      if (comanda > maxComanda) maxComanda = comanda;
+    }
+    
+    return maxComanda + 1;
+    
+  } catch (error) {
+    return 1;
+  }
+}
+
+function calcularTempoEspera(dataPedido) {
+  if (!dataPedido) return "0 min";
+  try {
+    var data = new Date(dataPedido);
+    var agora = new Date();
+    var diffMs = agora - data;
+    var diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Agora";
+    if (diffMin < 60) return diffMin + " min";
+    var horas = Math.floor(diffMin / 60);
+    var minutos = diffMin % 60;
+    return horas + "h " + minutos + "min";
+  } catch (e) {
+    return "0 min";
+  }
+}
+
+function criarPedido(dados) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PEDIDOS");
+    
+    if (!sh) {
+      sh = ss.insertSheet("PEDIDOS");
+      sh.appendRow(["ID Pedido", "Nome", "Telefone", "E-mail", "Endereço", 
+                    "Itens", "Quantidade", "Valor", "Status", "Pix Code", 
+                    "Data", "Comanda", "Observação", "Itens Detalhados"]);
+    }
+    
+    var comanda = getProximoNumeroComanda();
+    var orderId = "PED" + new Date().getTime();
+    
+    var itensTexto = Array.isArray(dados.itens) ? dados.itens.join(", ") : dados.itens || "";
+    var itensDetalhados = Array.isArray(dados.itens) ? JSON.stringify(dados.itens) : dados.itens || "";
+    var valorTotal = Number(dados.valor) || 0;
+    
+    sh.appendRow([
+      orderId,
+      dados.nome || "Cliente",
+      dados.telefone || "",
+      dados.email || "",
+      dados.endereco || "Retirada no Balcão",
+      itensTexto,
+      dados.quantidade || 1,
+      valorTotal,
+      "RECEBIDO",
+      "",
+      new Date().toISOString(),
+      comanda,
+      dados.observacao || "",
+      itensDetalhados
+    ]);
+    
+    return {
+      success: true,
+      orderId: orderId,
+      comanda: comanda,
+      mensagem: "Pedido #" + comanda + " criado com sucesso!"
+    };
+    
+  } catch (error) {
+    return { success: false, mensagem: error.toString() };
+  }
+}
+
+function atualizarStatusPedido(dados) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PEDIDOS");
+    
+    if (!sh) return { success: false, mensagem: "Aba PEDIDOS não encontrada" };
+    
+    var data = sh.getDataRange().getValues();
+    if (data.length <= 1) return { success: false, mensagem: "Nenhum pedido encontrado" };
+    
+    var orderId = dados.id || dados.orderId;
+    var novoStatus = String(dados.status || "").trim().toUpperCase();
+    
+    var statusValidos = ['RECEBIDO', 'PREPARANDO', 'PRONTO', 'ENTREGUE', 'CANCELADO'];
+    if (statusValidos.indexOf(novoStatus) === -1) {
+      return { success: false, mensagem: "Status inválido: " + novoStatus };
+    }
+    
+    var linhaEncontrada = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === String(orderId).trim()) {
+        linhaEncontrada = i + 1;
+        break;
+      }
+    }
+    
+    if (linhaEncontrada === -1) {
+      return { success: false, mensagem: "Pedido não encontrado" };
+    }
+    
+    sh.getRange(linhaEncontrada, 9).setValue(novoStatus);
+    
+    return {
+      success: true,
+      mensagem: "Status atualizado para: " + getStatusLabel(novoStatus),
+      status: novoStatus
+    };
+    
+  } catch (error) {
+    return { success: false, mensagem: error.toString() };
+  }
+}
+
+function cancelarPedido(dados) {
+  return atualizarStatusPedido({ id: dados.id, status: 'CANCELADO' });
+}
+
+function getPedidoById(orderId) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName("PEDIDOS");
+    if (!sh) return null;
+    
+    var data = sh.getDataRange().getValues();
+    if (data.length <= 1) return null;
+    
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === String(orderId).trim()) {
+        return {
+          id: String(data[i][0]).trim(),
+          comanda: Number(data[i][11] || i),
+          nome: String(data[i][1]).trim(),
+          telefone: String(data[i][2]).trim(),
+          itens: String(data[i][5]).trim(),
+          quantidade: Number(data[i][6]) || 1,
+          valor: Number(data[i][7]) || 0,
+          status: String(data[i][8] || "RECEBIDO").trim().toUpperCase(),
+          data: String(data[i][10] || ""),
+          observacao: String(data[i][12] || "")
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// ==================== CONFIGURAR PLANILHA ====================
+function configurarPlanilha() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // PRODUTOS
+    var shProdutos = ss.getSheetByName("PRODUTOS");
+    if (!shProdutos) shProdutos = ss.insertSheet("PRODUTOS");
+    else shProdutos.clear();
+    
+    shProdutos.appendRow(["ID", "Nome", "Preço", "Imagem URL", "Status", "Categoria", "Descrição"]);
+    var produtosExemplo = getProdutosExemplo();
+    for (var i = 0; i < produtosExemplo.length; i++) {
+      var p = produtosExemplo[i];
+      shProdutos.appendRow([p.id, p.nome, p.preco, p.imagem, "ATIVO", p.categoria, p.descricao]);
     }
 
-    // ===== SOM DE NOVO PEDIDO =====
-    function tocarSomNovoPedido() {
-      try {
-        if (!audioContext) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        
-        var osc = audioContext.createOscillator();
-        var gain = audioContext.createGain();
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        osc.frequency.value = 880;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        osc.start(audioContext.currentTime);
-        osc.stop(audioContext.currentTime + 0.3);
-        
-        setTimeout(function() {
-          var osc2 = audioContext.createOscillator();
-          var gain2 = audioContext.createGain();
-          osc2.connect(gain2);
-          gain2.connect(audioContext.destination);
-          osc2.frequency.value = 1108;
-          osc2.type = 'sine';
-          gain2.gain.setValueAtTime(0.2, audioContext.currentTime);
-          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-          osc2.start(audioContext.currentTime);
-          osc2.stop(audioContext.currentTime + 0.2);
-        }, 150);
-        
-      } catch (e) {}
-    }
+    // PEDIDOS
+    var shPedidos = ss.getSheetByName("PEDIDOS");
+    if (!shPedidos) shPedidos = ss.insertSheet("PEDIDOS");
+    else shPedidos.clear();
+    
+    shPedidos.appendRow(["ID Pedido", "Nome", "Telefone", "E-mail", "Endereço", 
+                         "Itens", "Quantidade", "Valor", "Status", "Pix Code", 
+                         "Data", "Comanda", "Observação", "Itens Detalhados"]);
 
-    // ===== NOTIFICAÇÃO =====
-    function mostrarNotificacao(mensagem, tipo) {
-      tipo = tipo || 'info';
-      
-      var existing = document.querySelector('.notification');
-      if (existing) existing.remove();
-      
-      var notif = document.createElement('div');
-      notif.className = 'notification ' + tipo;
-      notif.textContent = mensagem;
-      
-      document.body.appendChild(notif);
-      
-      setTimeout(function() {
-        if (notif.parentElement) {
-          notif.style.opacity = '0';
-          notif.style.transition = 'opacity 0.5s';
-          setTimeout(function() {
-            if (notif.parentElement) notif.remove();
-          }, 500);
-        }
-      }, 4000);
-    }
-  </script>
-</body>
-</html>
+    SpreadsheetApp.getUi().alert("✅ Planilha configurada com sucesso!\n\nAdicione seus produtos na aba 'PRODUTOS'.");
+
+    return { success: true };
+
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("❌ Erro: " + e.toString());
+    return { success: false, erro: e.toString() };
+  }
+}
+
+// ==================== MENU ====================
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('🍔 Restaurante')
+    .addItem('⚙️ Configurar Planilha', 'configurarPlanilha')
+    .addItem('🔄 Verificar Pedidos', 'verificarTodosPedidos')
+    .addToUi();
+}
+
+function verificarTodosPedidos() {
+  Logger.log('Verificação executada');
+}
