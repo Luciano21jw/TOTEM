@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primaria: #FF6B35; /* Laranja vibrante */
-            --secundaria: #1F2937; /* Cinza escuro moderno */
+            --primaria: #FF6B35;
+            --secundaria: #1F2937;
             --fundo: #F3F4F6;
             --branco: #FFFFFF;
             --verde: #10B981;
@@ -53,7 +53,6 @@
         
         .area-produtos { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-content: start; }
         
-        /* Estilo do Cartão do Produto */
         .produto { background: var(--branco); border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .produto:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
         
@@ -141,10 +140,8 @@
 </div>
 
 <script>
-    // ==========================================
-    // COLE O SEU LINK DO APPS SCRIPT AQUI
+    // COLE AQUI O SEU LINK /exec ATUALIZADO
     const URL_API = "https://script.google.com/macros/s/AKfycby3b1lovwkQpZ4ZZS9ydVFypRuia8JHOXqOM_RLimMInDSBMD5oStAeaoNjtGJYFI8f/exec";
-    // ==========================================
 
     let carrinho = [];
     let produtos = [];
@@ -153,17 +150,16 @@
     async function carregarProdutos() {
         try {
             const resposta = await fetch(URL_API);
-            if (!resposta.ok) throw new Error("Erro de rede");
+            
+            // Verifica se a resposta foi bem-sucedida
+            if (!resposta.ok) {
+                throw new Error(`Erro HTTP: ${resposta.status}`);
+            }
             
             const dados = await resposta.json();
             
-            // Verifica se os dados vieram no formato esperado
             if (Array.isArray(dados)) {
-                // Se o seu script já mandar um array pronto
                 produtos = dados;
-            } else if (dados.produtos) {
-                // Se o seu script mandar um objeto com a chave "produtos"
-                produtos = dados.produtos;
             } else {
                 throw new Error("Formato de dados inválido");
             }
@@ -171,12 +167,11 @@
             renderizarCardapio();
 
         } catch (erro) {
-            console.error("Erro ao carregar produtos:", erro);
-            document.getElementById('listaProdutos').innerHTML = '<p style="grid-column: span 2; text-align: center; color: #EF4444; margin-top: 50px; font-weight: 700;">Erro ao conectar. Verifique o link.</p>';
+            console.error("Erro detalhado:", erro);
+            document.getElementById('listaProdutos').innerHTML = '<p style="grid-column: span 2; text-align: center; color: #EF4444; margin-top: 50px; font-weight: 700;">Erro ao conectar. Verifique se o script está publicado e com acesso público.</p>';
         }
     }
 
-    // Função para desenhar os produtos na tela
     function renderizarCardapio() {
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
@@ -194,15 +189,10 @@
         });
     }
 
-    // Lógica do Carrinho
     function adicionarAoCarrinho(index) {
         const produto = produtos[index];
         carrinho.push(produto);
         atualizarTotal();
-        // Feedback visual rápido
-        const btns = document.querySelectorAll('.adicionar-btn');
-        btns[index].innerText = "✓ Adicionado";
-        setTimeout(() => { btns[index].innerText = "Adicionar"; }, 1000);
     }
 
     function limparCarrinho() {
@@ -225,13 +215,11 @@
         limparCarrinho();
     }
 
-    // Navegação entre telas
     function navegar(idTela) {
         document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
         document.getElementById(idTela).classList.add('ativa');
     }
 
-    // Iniciar o sistema
     window.onload = carregarProdutos;
 </script>
 
