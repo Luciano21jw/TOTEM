@@ -166,7 +166,7 @@
 
 <script>
     // ============================================================
-    //  COLE AQUI O SEU LINK DO WEB APP ( /exec )
+    //  COLE O SEU LINK DO WEB APP AQUI ( /exec )
     // ============================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77mJ7SNH3nhXQCrn7TBD-NzUn7DZZrDl2kMbP6aCqSi7jZXmhpY9ijdlQasMC6XTJ/exec"; 
 
@@ -189,24 +189,16 @@
     });
 
     // ============================================================
-    //  CARREGAR PRODUTOS (Puxa do seu doGet original)
+    //  CARREGAR PRODUTOS (Agora lê o formato de OBJETOS)
     // ============================================================
     async function carregarProdutos() {
         try {
             const resposta = await fetch(`${SCRIPT_URL}?api=produtos`);
             const dados = await resposta.json();
             
-            if (dados.success && dados.data) {
-                // Formato do seu Apps Script: Array de arrays (linhas da planilha)
-                // Coluna 0: ID, Coluna 1: Nome, Coluna 2: Preço, Coluna 3: Imagem, Coluna 4: Status, Coluna 5: Categoria
-                produtos = dados.data.map(p => ({
-                    id: p[0],
-                    nome: p[1],
-                    preco: parseFloat(p[2]),
-                    imagem: p[3],
-                    status: p[4],
-                    categoria: p[5] || "Geral"
-                }));
+            if (dados.success && dados.data && dados.data.length > 0) {
+                // Formato já veio como objeto: { id, nome, preco, imagem, status, categoria }
+                produtos = dados.data;
             } else {
                 produtos = [];
             }
@@ -249,7 +241,7 @@
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
-                <div class="preco-produto">R$ ${produto.preco.toFixed(2)}</div>
+                <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
                 <button class="adicionar-btn" onclick="adicionarAoCarrinho('${produto.nome}')">Adicionar</button>
             `;
             container.appendChild(div);
@@ -257,9 +249,9 @@
     }
 
     function adicionarAoCarrinho(nome) {
-        const produto = produtos.find(p => p.nome === nome && p.status === "ATIVO");
-        if (produto) {
-            carrinho.push(produto);
+        const produit = produits.find(p => p.nome === nome && p.status === "ATIVO");
+        if (produit) {
+            carrinho.push(produit);
             atualizarTotal();
         }
     }
@@ -287,7 +279,7 @@
     }
 
     // ============================================================
-    //  SALVAR PEDIDO E GERAR PIX (Usa o doPost do seu script)
+    //  SALVAR PEDIDO E GERAR PIX (Usa doPost original)
     // ============================================================
     async function irParaPagamento() {
         let total = 0;
@@ -306,7 +298,6 @@
         };
 
         try {
-            // Envia via doPost (api: salvarpedido)
             const resposta = await fetch(SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
@@ -329,7 +320,7 @@
     }
 
     // ============================================================
-    //  MOSTRAR PIX E VERIFICAR PAGAMENTO (Usa doGet: api=pedido)
+    //  MOSTRAR PIX E VERIFICAR PAGAMENTO
     // ============================================================
     function mostrarTelaPix(code, valor) {
         navegar('pix');
@@ -370,7 +361,6 @@
 
         timerVerificacao = setInterval(async () => {
             try {
-                // Verifica se o status mudou para PAGO na planilha
                 const resposta = await fetch(`${SCRIPT_URL}?api=pedido&id=${pedidoAtual.orderId}`);
                 const dados = await resposta.json();
                 
@@ -390,7 +380,6 @@
                     path.offsetHeight;
                     path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
 
-                    // Libera o botão de enviar WhatsApp
                     document.getElementById('btnWhatsapp').style.display = 'block';
 
                     setTimeout(() => {
@@ -405,7 +394,6 @@
         }, 5000);
     }
 
-    // Envia mensagem de confirmação no WhatsApp
     function enviarMensagemWhatsApp() {
         if (!whatsappCliente || !window.pixCodeGlobal) return;
         const msg = `✅ *PAGAMENTO CONFIRMADO!*\n\nPedido liberado com sucesso!\nValor: R$ ${totalPedido.toFixed(2).replace('.', ',')}`;
