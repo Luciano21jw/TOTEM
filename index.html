@@ -20,32 +20,26 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; user-select: none; }
         body { background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .totem { width: 420px; height: 850px; background: var(--fundo); border-radius: 20px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.8); border: 8px solid var(--secundaria); display: flex; flex-direction: column; position: relative; }
-        
         .tela { display: none; flex-direction: column; height: 100%; width: 100%; }
         .tela.ativa { display: flex; }
 
-        /* HOME */
         #home { background: linear-gradient(135deg, var(--primaria), #ff8c42); align-items: center; justify-content: center; text-align: center; color: white; }
         .logo-marca { font-size: 50px; font-weight: 800; margin-bottom: 20px; }
         .banner-home { font-size: 80px; margin-bottom: 30px; }
         .botao-iniciar { background: white; color: var(--secundaria); border: none; padding: 20px 40px; font-size: 20px; font-weight: 800; border-radius: 50px; cursor: pointer; }
 
-        /* ESCOLHA */
         #escolha { background: white; align-items: center; justify-content: center; padding: 20px; }
         .titulo-escolha { font-size: 28px; font-weight: 800; color: var(--secundaria); margin-bottom: 40px; }
         .opcoes { display: flex; gap: 15px; width: 100%; }
         .botao-opcao { flex: 1; height: 250px; background: var(--fundo); border: 3px solid #ddd; border-radius: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; font-weight: 800; color: var(--secundaria); }
         .icone-opcao { font-size: 70px; background: white; padding: 20px; border-radius: 50%; }
 
-        /* CARDÁPIO */
         #cardapio { background: var(--fundo); }
         .header-cardapio { background: var(--secundaria); color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; }
         .botao-voltar { position: absolute; left: 15px; top: 15px; background: none; border: 2px solid white; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; }
-        
         .categorias-bar { display: flex; background: white; padding: 10px; gap: 10px; overflow-x: auto; border-bottom: 1px solid #ddd; }
         .cat-btn { padding: 8px 15px; background: #f0f0f0; border: none; border-radius: 20px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 14px; transition: 0.2s; }
         .cat-btn.ativa { background: var(--primaria); color: white; }
-
         .area-produtos { flex: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
         .produto { background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; }
         .icone-produto { font-size: 45px; margin: 10px auto; height: 60px; display: flex; align-items: center; justify-content: center; }
@@ -54,14 +48,12 @@
         .preco-produto { font-size: 16px; font-weight: 800; color: var(--primaria); margin-bottom: 8px; }
         .adicionar-btn { background: var(--secundaria); color: white; border: none; border-radius: 6px; padding: 8px; cursor: pointer; font-weight: bold; }
 
-        /* CARRINHO */
         .rodape-cardapio { background: white; padding: 12px; border-top: 2px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
         .linha-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--secundaria); }
         .botoes-rodape { display: flex; gap: 10px; }
         .botao-limpar { flex: 1; background: #eee; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: bold; }
         .botao-finalizar { flex: 2; background: var(--verde); color: white; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: 800; }
 
-        /* TELA DE WHATSAPP (Nova) */
         #telaWhatsapp { background: white; align-items: center; justify-content: center; padding: 20px; }
         #telaWhatsapp h2 { font-size: 24px; font-weight: 800; color: var(--secundaria); margin-bottom: 20px; text-align: center; }
         .campo-whatsapp { width: 100%; margin-bottom: 20px; }
@@ -70,26 +62,20 @@
         .campo-whatsapp input:focus { border-color: #25D366; }
         .btn-confirmar-whatsapp { width: 100%; background: #25D366; color: white; border: none; border-radius: 10px; padding: 15px; font-size: 18px; font-weight: 800; cursor: pointer; }
 
-        /* TELA PIX */
         #pix { background: var(--fundo); align-items: center; justify-content: flex-start; padding: 20px; overflow-y: auto; }
         .pix-header { text-align: center; margin-bottom: 10px; }
         .pix-header .client-name { font-size: 1.1rem; font-weight: 700; color: var(--secundaria); }
         .pix-header .pix-amount { font-size: 2.5rem; font-weight: 900; color: var(--primaria); margin: 5px 0; letter-spacing: -1px; }
-
         #statusPagamento { width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-align: center; margin-bottom: 10px; transition: all 0.3s; }
         .status-pendente { background: rgba(255,193,7,0.1); color: var(--amarelo); border: 1px solid rgba(255,193,7,0.3); }
         .status-pago { background: rgba(0,230,118,0.1); color: var(--verde); border: 1px solid rgba(0,230,118,0.3); animation: pulseGreen 1s infinite; }
         @keyframes pulseGreen { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-
         .status-temporizador { font-size: 0.8rem; color: var(--cinza); text-align: center; margin-bottom: 15px; }
-
         .qr-container { background: white; padding: 15px; margin: 0 auto 15px; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 2px solid transparent; }
         .qr-container.confirmed { border-color: var(--verde); box-shadow: 0 0 30px rgba(0,230,118,0.2); }
-
         .pix-code-copy { background: var(--branco); padding: 10px; border-radius: 8px; font-size: 0.7rem; color: var(--cinza); word-break: break-all; cursor: pointer; border: 1px solid #ddd; text-align: center; font-family: monospace; width: 100%; margin-bottom: 15px; }
         .pix-code-copy:hover { border-color: var(--primaria); color: var(--primaria); }
-
-        /* CHECK ANIMADO */
+        
         .check-writing-container { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 10px; margin-bottom: 15px; border-radius: 12px; background: rgba(0,230,118,0.05); border: 2px solid transparent; width: 100%; }
         .check-writing-container.visivel { display: flex; border-color: var(--verde); }
         .check-svg { width: 70px; height: 70px; margin-bottom: 5px; }
@@ -98,11 +84,9 @@
         .check-writing-container .texto-confirmacao { color: var(--verde); font-weight: 800; font-size: 1.2rem; margin-top: 5px; opacity: 0; animation: fadeText 0.5s ease-in-out 1s forwards; }
         @keyframes fadeText { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* BOTÕES FINAIS */
         .footer-actions { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         .botao-nova-venda { flex: 1; background: var(--secundaria); color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 16px; }
         .botao-cancelar-venda { flex: 1; background: rgba(255,82,82,0.1); color: var(--vermelho); border: 1px solid rgba(255,82,82,0.2); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 14px; }
-        
         .botao-whatsapp { background: #25D366; color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 800; font-size: 14px; width: 100%; margin-bottom: 10px; display: none; }
         .botao-whatsapp:hover { opacity: 0.9; }
     </style>
@@ -110,14 +94,12 @@
 <body>
 
 <div class="totem">
-    <!-- HOME -->
     <div id="home" class="tela ativa">
         <div class="logo-marca">SABOR TOTAL</div>
         <div class="banner-home">🍔🔥</div>
         <button class="botao-iniciar" onclick="navegar('escolha')">TOQUE PARA COMEÇAR</button>
     </div>
 
-    <!-- ESCOLHA -->
     <div id="escolha" class="tela">
         <h2 class="titulo-escolha">Como deseja receber?</h2>
         <div class="opcoes">
@@ -130,16 +112,13 @@
         </div>
     </div>
 
-    <!-- CARDÁPIO -->
     <div id="cardapio" class="tela">
         <div class="header-cardapio">
             <button class="botao-voltar" onclick="navegar('escolha')">&larr; Voltar</button>
             NOSSO CARDÁPIO
         </div>
-        
         <div class="categorias-bar" id="barraCategorias"></div>
         <div class="area-produtos" id="listaProdutos"></div>
-
         <div class="rodape-cardapio">
             <div class="linha-total"><span>Total:</span><span id="totalCarrinho">R$ 0,00</span></div>
             <div class="botoes-rodape">
@@ -149,7 +128,6 @@
         </div>
     </div>
 
-    <!-- TELA WHATSAPP -->
     <div id="telaWhatsapp" class="tela">
         <h2>Digite seu WhatsApp</h2>
         <div class="campo-whatsapp">
@@ -159,33 +137,26 @@
         <button class="btn-confirmar-whatsapp" onclick="confirmarWhatsapp()">Confirmar e Ver PIX</button>
     </div>
 
-    <!-- TELA PIX -->
     <div id="pix" class="tela">
         <div class="pix-header">
             <div class="client-name" id="displayCliente">Cliente</div>
             <div class="pix-amount">R$ <span id="displayValor">0,00</span></div>
         </div>
-
         <div id="checkWritingContainer" class="check-writing-container">
             <svg class="check-svg" viewBox="0 0 80 80">
                 <path class="check-path" d="M 15 40 L 35 60 L 70 20" />
             </svg>
             <span class="texto-confirmacao">PAGAMENTO CONFIRMADO!</span>
         </div>
-
         <div id="statusPagamento" class="status-pendente">⏳ Aguardando pagamento...</div>
         <div id="temporizador" class="status-temporizador">⏱️ Verificando automaticamente...</div>
-
         <div class="qr-container" id="qrContainer">
             <div id="qrcode"></div>
         </div>
-
         <div class="pix-code-copy" id="pixCodeTexto" onclick="copiarPix()">📋 Clique para copiar o código Pix</div>
-
         <button class="botao-whatsapp" id="btnWhatsapp" onclick="enviarMensagemWhatsApp()">
             📲 Enviar Confirmação no WhatsApp
         </button>
-
         <div class="footer-actions">
             <button class="botao-cancelar-venda" onclick="cancelarPedido()">Cancelar</button>
             <button class="botao-nova-venda" id="btnNovaVenda" style="display:none;" onclick="navegar('home')">Nova Venda</button>
@@ -194,10 +165,8 @@
 </div>
 
 <script>
-    // ==========================================
-    // COLE SEU LINK DO APPS SCRIPT AQUI
-    const URL_API = "https://script.google.com/macros/s/AKfycbxDLDP6p4MMzcHGbhvyaxexwZ-4pVYRy_YjgPWjy3cPIE8hwxxAhoNI8p0NKcnW6wjE/exec"; 
-    // ==========================================
+    // COLE SEU LINK DO APPS SCRIPT AQUI (ex: https://script.google.com/macros/s/XXXX/exec)
+    const URL_API = "COLE_SEU_LINK_AQUI"; 
 
     let carrinho = [];
     let produtos = [];
@@ -207,18 +176,20 @@
     let totalPedido = 0;
     let whatsappCliente = "";
 
-    // Função de máscara para telefone
+    // FALLBACK (produtos de exemplo caso a API demore)
+    const FALLBACK_PRODUTOS = [
+        { nome: "X-Burger", preco: 25.90, imagem: "https://picsum.photos/200/200?random=1", categoria: "Lanches" },
+        { nome: "Batata Frita", preco: 12.50, imagem: "https://picsum.photos/200/200?random=2", categoria: "Acompanhamentos" },
+        { nome: "Refrigerante", preco: 8.00, imagem: "https://picsum.photos/200/200?random=3", categoria: "Bebidas" },
+        { nome: "Milkshake", preco: 15.90, imagem: "https://picsum.photos/200/200?random=4", categoria: "Sobremesas" }
+    ];
+
     document.getElementById('inputWhatsapp').addEventListener('input', function(e) {
         let v = e.target.value.replace(/\D/g, '').substring(0, 11);
-        if (v.length > 10) {
-            v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-        } else if (v.length > 6) {
-            v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-        } else if (v.length > 2) {
-            v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
-        } else {
-            v = v.replace(/^(\d*)/, '($1');
-        }
+        if (v.length > 10) v = v.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        else if (v.length > 6) v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+        else v = v.replace(/^(\d*)/, '($1');
         e.target.value = v;
     });
 
@@ -228,18 +199,19 @@
             const dados = await resposta.json();
             if (dados.success) {
                 produtos = dados.data;
-                criarBarraCategorias();
-                renderizarCardapio();
+            } else {
+                produtos = FALLBACK_PRODUTOS;
             }
         } catch (e) {
-            document.getElementById('listaProdutos').innerHTML = "<p style='color:red;'>Erro ao carregar.</p>";
+            produtos = FALLBACK_PRODUTOS;
         }
+        criarBarraCategorias();
+        renderizarCardapio();
     }
 
     function criarBarraCategorias() {
         const barra = document.getElementById('barraCategorias');
         const categorias = [...new Set(produtos.map(p => p.categoria || 'Geral'))];
-        
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrarCategoria('Todos', this)">Todos</button>`;
         categorias.forEach(cat => {
             barra.innerHTML += `<button class="cat-btn" onclick="filtrarCategoria('${cat}', this)">${cat}</button>`;
@@ -256,26 +228,26 @@
     function renderizarCardapio() {
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
-        
         const filtrados = categoriaAtiva === "Todos" ? produtos : produtos.filter(p => p.categoria === categoriaAtiva);
-
-        filtrados.forEach((produto, index) => {
+        filtrados.forEach((produto) => {
             const div = document.createElement('div');
             div.className = 'produto';
             div.innerHTML = `
                 <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
                 <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
-                <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
+                <button class="adicionar-btn" onclick="adicionarAoCarrinho('${produto.nome}')">Adicionar</button>
             `;
             container.appendChild(div);
         });
     }
 
-    function adicionarAoCarrinho(index) {
-        const produto = categoriaAtiva === "Todos" ? produtos[index] : produtos.filter(p => p.categoria === categoriaAtiva)[index];
-        carrinho.push(produto);
-        atualizarTotal();
+    function adicionarAoCarrinho(nome) {
+        const produto = produtos.find(p => p.nome === nome);
+        if (produto) {
+            carrinho.push(produto);
+            atualizarTotal();
+        }
     }
 
     function limparCarrinho() { carrinho = []; atualizarTotal(); }
@@ -286,20 +258,16 @@
         document.getElementById('totalCarrinho').innerText = `R$ ${total.toFixed(2)}`;
     }
 
-    // Vai para a tela de digitar o WhatsApp
     function irParaWhatsapp() {
         if (carrinho.length === 0) { alert("Adicione itens!"); return; }
         document.getElementById('inputWhatsapp').value = "";
         navegar('telaWhatsapp');
     }
 
-    // Confirma o WhatsApp e vai para o PIX
     async function confirmarWhatsapp() {
         let numero = document.getElementById('inputWhatsapp').value;
-        numero = numero.replace(/\D/g, ""); // Remove tudo que não é número
-        
+        numero = numero.replace(/\D/g, "");
         if (numero.length < 10) { alert("Digite um número válido com DDD!"); return; }
-        
         whatsappCliente = numero;
         irParaPagamento();
     }
@@ -326,7 +294,6 @@
                 body: JSON.stringify({ api: "salvarpedido", data: pedidoData })
             });
             const dados = await resposta.json();
-
             if (dados.success) {
                 pedidoAtual = dados.data;
                 if (pedidoAtual.pixCode) {
@@ -346,7 +313,6 @@
         navegar('pix');
         document.getElementById('displayCliente').innerText = whatsappCliente;
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
-
         document.getElementById('statusPagamento').className = 'status-pendente';
         document.getElementById('statusPagamento').innerText = "⏳ Aguardando pagamento...";
         document.getElementById('temporizador').innerText = "⏱️ Verificando automaticamente...";
@@ -354,7 +320,6 @@
         document.getElementById('qrContainer').classList.remove('confirmed');
         document.getElementById('btnNovaVenda').style.display = 'none';
         document.getElementById('btnWhatsapp').style.display = 'none';
-
         document.getElementById('pixCodeTexto').innerText = code;
         window.pixCodeGlobal = code;
 
@@ -363,7 +328,6 @@
         new QRCode(qrDiv, { text: code, width: 170, height: 170 });
         
         if (timerVerificacao) clearInterval(timerVerificacao);
-        
         let segundos = 0;
         const maxSegundos = 600;
 
@@ -383,45 +347,32 @@
             try {
                 const resposta = await fetch(`${URL_API}?api=pedido&id=${pedidoAtual.orderId}`);
                 const dados = await resposta.json();
-                
                 if (dados.success && dados.data && dados.data.status === "PAGO") {
                     clearInterval(timerVerificacao);
                     clearInterval(intervaloTempo);
-                    
                     document.getElementById('statusPagamento').className = 'status-pago';
                     document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
                     document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
                     document.getElementById('qrContainer').classList.add('confirmed');
-                    
                     const checkBox = document.getElementById('checkWritingContainer');
                     checkBox.classList.add('visivel');
                     const path = checkBox.querySelector('.check-path');
                     path.style.animation = 'none';
                     path.offsetHeight;
                     path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
-
-                    // Libera o botão do WhatsApp para o cliente
                     document.getElementById('btnWhatsapp').style.display = 'block';
-
                     setTimeout(() => {
                         document.getElementById('btnNovaVenda').style.display = 'block';
                     }, 1500);
-                    
                     limparCarrinho();
                 }
-            } catch (e) {
-                // Tenta novamente em 5 segundos
-            }
+            } catch (e) {}
         }, 5000);
     }
 
-    // Envia a confirmação pelo WhatsApp
     function enviarMensagemWhatsApp() {
         if (!whatsappCliente || !window.pixCodeGlobal) return;
-        
         const msg = `✅ *PAGAMENTO CONFIRMADO!*\n\nPedido liberado com sucesso!\nValor: R$ ${totalPedido.toFixed(2).replace('.', ',')}`;
-        
-        // Link do WhatsApp
         const url = `https://wa.me/55${whatsappCliente}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');
     }
