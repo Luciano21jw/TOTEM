@@ -30,17 +30,23 @@
 
         /* Cardápio */
         #cardapio { background: var(--fundo); }
-        .header-cardapio { background: var(--secundaria); color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; position: relative; }
-        .botao-voltar { position: absolute; left: 15px; top: 15px; background: none; border: 2px solid white; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; }
+        .header-cardapio { background: var(--secundaria); color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: relative; display: flex; align-items: center; justify-content: center; }
+        .botao-voltar { position: absolute; left: 15px; top: 15px; background: none; border: 2px solid white; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; }
         
+        /* Barra de Categorias */
+        .categorias-bar { display: flex; background: white; padding: 10px; gap: 10px; overflow-x: auto; border-bottom: 1px solid #ddd; }
+        .cat-btn { padding: 8px 15px; background: #f0f0f0; border: none; border-radius: 20px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 14px; transition: 0.2s; }
+        .cat-btn.ativa { background: var(--primaria); color: white; }
+
         .area-produtos { flex: 1; padding: 15px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
         .produto { background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; }
-        .icone-produto { font-size: 45px; margin: 10px auto; }
+        .icone-produto { font-size: 45px; margin: 10px auto; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .icone-produto img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; }
         .nome-produto { font-weight: bold; font-size: 13px; color: var(--secundaria); margin-bottom: 5px; }
         .preco-produto { font-size: 16px; font-weight: 800; color: var(--primaria); margin-bottom: 8px; }
         .adicionar-btn { background: var(--secundaria); color: white; border: none; border-radius: 6px; padding: 8px; cursor: pointer; font-weight: bold; }
 
-        /* Carrinho / Pagamento */
+        /* Carrinho */
         .rodape-cardapio { background: white; padding: 12px; border-top: 2px solid #ddd; display: flex; flex-direction: column; gap: 10px; }
         .linha-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--secundaria); }
         .botoes-rodape { display: flex; gap: 10px; }
@@ -52,6 +58,7 @@
         .qrcode-box { background: #eee; padding: 20px; border-radius: 15px; margin: 20px 0; }
         .pix-codigo { background: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 12px; word-break: break-all; margin-bottom: 20px; }
         .botao-copiar { background: var(--secundaria); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .status-pagamento { margin-top: 20px; font-size: 14px; font-weight: 600; color: #888; }
 
         /* Tela Sucesso */
         #sucesso { background: var(--verde); color: white; align-items: center; justify-content: center; text-align: center; padding: 20px; }
@@ -88,6 +95,10 @@
             <button class="botao-voltar" onclick="navegar('escolha')">&larr; Voltar</button>
             NOSSO CARDÁPIO
         </div>
+        
+        <!-- Barra de Categorias -->
+        <div class="categorias-bar" id="barraCategorias"></div>
+
         <div class="area-produtos" id="listaProdutos"></div>
 
         <div class="rodape-cardapio">
@@ -107,24 +118,24 @@
         <p style="font-weight: bold;">Código Copia e Cola:</p>
         <div class="pix-codigo" id="pixCode"></div>
         <button class="botao-copiar" onclick="copiarPix()">Copiar Código PIX</button>
-        <br><br>
-        <p style="font-size: 12px; color: #888;">Após pagar, o status será atualizado automaticamente em instantes.</p>
+        <div class="status-pagamento" id="statusPagamento">⏳ Aguardando confirmação do pagamento...</div>
     </div>
 
     <!-- SUCESSO -->
     <div id="sucesso" class="tela">
         <div class="icone-sucesso">✅</div>
         <h2>Pagamento Confirmado!</h2>
-        <p style="margin-top: 15px;">Seu pedido está sendo preparado.</p>
+        <p style="margin-top: 15px;">Enviamos um e-mail de confirmação para você.</p>
         <button class="botao-reiniciar" onclick="navegar('home')">Fazer Novo Pedido</button>
     </div>
 </div>
 
 <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbzhquqEVnX_qNjFB510rdeQH_Du98uEDfEg2Y_-hOlOqYoB9CHrK6QDOvv0_insIngw/exec"; // Substitua pelo link /exec do seu script!
+    const URL_API = "COLE_SEU_LINK_DO_APPS_SCRIPT_AQUI"; // Substitua pelo link /exec
     let carrinho = [];
     let produtos = [];
     let pedidoAtual = null;
+    let categoriaAtiva = "Todos";
 
     async function carregarProdutos() {
         try {
@@ -132,6 +143,7 @@
             const dados = await resposta.json();
             if (dados.success) {
                 produtos = dados.data;
+                criarBarraCategorias();
                 renderizarCardapio();
             }
         } catch (e) {
@@ -139,14 +151,36 @@
         }
     }
 
+    // Cria os botões de categoria dinamicamente
+    function criarBarraCategorias() {
+        const barra = document.getElementById('barraCategorias');
+        const categorias = [...new Set(produtos.map(p => p.categoria || 'Geral'))];
+        
+        barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrarCategoria('Todos', this)">Todos</button>`;
+        
+        categorias.forEach(cat => {
+            barra.innerHTML += `<button class="cat-btn" onclick="filtrarCategoria('${cat}', this)">${cat}</button>`;
+        });
+    }
+
+    function filtrarCategoria(cat, btn) {
+        categoriaAtiva = cat;
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('ativa'));
+        btn.classList.add('ativa');
+        renderizarCardapio();
+    }
+
     function renderizarCardapio() {
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
-        produtos.forEach((produto, index) => {
+        
+        const filtrados = categoriaAtiva === "Todos" ? produtos : produtos.filter(p => p.categoria === categoriaAtiva);
+
+        filtrados.forEach((produto, index) => {
             const div = document.createElement('div');
             div.className = 'produto';
             div.innerHTML = `
-                <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}" style="width:60px; height:60px; border-radius:10px;">` : '🍽️'}</div>
+                <div class="icone-produto">${produto.imagem ? `<img src="${produto.imagem}">` : '🍽️'}</div>
                 <div class="nome-produto">${produto.nome}</div>
                 <div class="preco-produto">R$ ${parseFloat(produto.preco).toFixed(2)}</div>
                 <button class="adicionar-btn" onclick="adicionarAoCarrinho(${index})">Adicionar</button>
@@ -156,7 +190,8 @@
     }
 
     function adicionarAoCarrinho(index) {
-        carrinho.push(produtos[index]);
+        const produto = categoriaAtiva === "Todos" ? produtos[index] : produtos.filter(p => p.categoria === categoriaAtiva)[index];
+        carrinho.push(produto);
         atualizarTotal();
     }
 
@@ -175,10 +210,15 @@
         let itensStr = "";
         carrinho.forEach(item => { total += parseFloat(item.preco); itensStr += item.nome + ", "; });
 
+        // No totem, geralmente pegamos o email digitado na tela ou definimos um padrão. 
+        // Aqui está como exemplo, mas você pode adicionar um campo de input para email.
+        const emailCliente = prompt("Digite seu e-mail para receber a confirmação do pagamento:");
+        if (!emailCliente) return;
+
         const pedidoData = {
             nome: "Cliente Totem",
             telefone: "0000000000",
-            email: "totem@email.com",
+            email: emailCliente,
             endereco: "Retirada no balcão",
             itens: itensStr,
             qtd: carrinho.length,
@@ -205,9 +245,9 @@
 
     function mostrarTelaPix(code) {
         navegar('pix');
+        document.getElementById('statusPagamento').innerText = "⏳ Aguardando confirmação do pagamento...";
         document.getElementById('pixCode').innerText = code;
         
-        // Limpa e gera o QR Code
         const qrDiv = document.getElementById('qrcode');
         qrDiv.innerHTML = '';
         new QRCode(qrDiv, { text: code, width: 200, height: 200 });
@@ -216,9 +256,11 @@
         let interval = setInterval(async () => {
             const resposta = await fetch(`${URL_API}?api=pedido&id=${pedidoAtual.orderId}`);
             const dados = await resposta.json();
+            
             if (dados.success && dados.data && dados.data.status === "PAGO") {
                 clearInterval(interval);
-                navegar('sucesso');
+                document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
+                setTimeout(() => navegar('sucesso'), 1500);
                 limparCarrinho();
             }
         }, 5000);
