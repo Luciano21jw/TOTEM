@@ -78,7 +78,6 @@
         .btn-testar-email:hover { background: #1976D2; }
         .debug-info { background: #333; color: #00ff00; padding: 10px; border-radius: 8px; font-size: 12px; font-family: monospace; width: 100%; margin-top: 10px; display: none; max-height: 100px; overflow-y: auto; }
         .debug-info.visivel { display: block; }
-        .badge-count { background: red; color: white; border-radius: 50%; padding: 2px 8px; font-size: 12px; margin-left: 5px; }
         .btn-testar-container { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     </style>
 </head>
@@ -153,9 +152,9 @@
 
 <script>
     // ============================================================
-    //  CONFIGURAÇÕES
+    //  COLOQUE SUA URL DO WEB APP AQUI (A URL QUE VOCÊ ME PASSOU)
     // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKdmtFvfLMZaIRxM5yQpWLy6StR924ds2OZAPt5CH7SZXm3ge6aiKFxJzursEqU2qO/exec"; // SUBSTITUA PELA SUA URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVXrCFdixHlB9WGYB_bF8-StRL-R9qAhEbL8r3eJj4m1JsVzXNR-2Vt_mYdkE6sGpG/exec";
 
     let carrinho = [];
     let produtos = [];
@@ -164,10 +163,9 @@
     let timerInterval = null;
     let totalPedido = 0;
     let vendaConfirmada = false;
+    let pedidoAtualID = "";
 
-    // ============================================================
-    //  FUNÇÃO JSONP
-    // ============================================================
+    // Função JSONP para chamar o Web App
     function jsonp(url, cb) {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => { 
@@ -197,7 +195,7 @@
     async function testarConexao() {
         const debug = document.getElementById('debugInfo');
         debug.classList.add('visivel');
-        debug.innerHTML = '⏳ Testando conexão...\n';
+        debug.innerHTML = '⏳ Testando configurações...\n';
         
         try {
             const data = await jsonp(SCRIPT_URL + '?action=testarConfiguracao', 'cb_test_' + Date.now());
@@ -206,22 +204,13 @@
                 debug.innerHTML += '📌 Chave PIX: ' + data.chave + '\n';
                 debug.innerHTML += '📌 Nome: ' + data.nome + '\n';
                 debug.innerHTML += '📌 Cidade: ' + data.cidade + '\n';
-                debug.innerHTML += '✅ Sistema configurado corretamente!';
-                alert('✅ Sistema configurado corretamente!\n\n' + 
-                      'Chave PIX: ' + data.chave + '\n' +
-                      'Nome: ' + data.nome + '\n' +
-                      'Cidade: ' + data.cidade);
+                alert('✅ Sistema configurado corretamente!');
             } else {
                 debug.innerHTML += '❌ Erro: ' + (data?.mensagem || 'Configuração não encontrada') + '\n';
-                debug.innerHTML += '⚠️ Crie a aba "Configurações" na planilha com:\n';
-                debug.innerHTML += 'B1: Chave PIX\n';
-                debug.innerHTML += 'B2: Seu Nome\n';
-                debug.innerHTML += 'B3: Sua Cidade';
                 alert('❌ ' + (data?.mensagem || 'Configuração não encontrada'));
             }
         } catch (e) {
             debug.innerHTML += '❌ Erro de conexão: ' + e.message + '\n';
-            debug.innerHTML += '⚠️ Verifique se a URL do Web App está correta';
             alert('❌ Erro de conexão: ' + e.message);
         }
     }
@@ -232,31 +221,23 @@
     async function testarVerificacaoEmail() {
         const debug = document.getElementById('debugInfo');
         debug.classList.add('visivel');
-        debug.innerHTML = '⏳ Testando verificação de email...\n';
+        debug.innerHTML = '⏳ Verificando pagamento...\n';
         
         try {
             const data = await jsonp(SCRIPT_URL + '?action=verificarPagamento', 'cb_email_' + Date.now());
-            debug.innerHTML += '📧 Resposta: ' + JSON.stringify(data, null, 2) + '\n';
+            debug.innerHTML += '📧 Resposta: ' + JSON.stringify(data) + '\n';
             
             if (data && data.confirmado) {
-                debug.innerHTML += '✅ PAGAMENTO CONFIRMADO POR EMAIL!\n';
+                debug.innerHTML += '✅ PAGAMENTO CONFIRMADO!\n';
                 alert('✅ Pagamento confirmado por email!');
                 confirmarPagamento();
             } else {
-                debug.innerHTML += '⚠️ Nenhum pagamento confirmado encontrado.\n';
-                debug.innerHTML += '💡 Dicas:\n';
-                debug.innerHTML += '1. Verifique se o email de confirmação chegou\n';
-                debug.innerHTML += '2. Execute a função "listarEmailsRecentes" no Apps Script\n';
-                debug.innerHTML += '3. Verifique se a aba "Emails_Processados" existe';
-                alert('⚠️ Nenhum pagamento confirmado encontrado.\n\n' +
-                      'Verifique se:\n' +
-                      '1. O email de confirmação chegou\n' +
-                      '2. A aba "Emails_Processados" existe na planilha\n' +
-                      '3. O email está com palavras-chave: PAGO, CONFIRMADO, APROVADO');
+                debug.innerHTML += '⚠️ Nenhum pagamento encontrado.\n';
+                alert('⚠️ Nenhum pagamento confirmado encontrado.');
             }
         } catch (e) {
             debug.innerHTML += '❌ Erro: ' + e.message + '\n';
-            alert('❌ Erro ao testar email: ' + e.message);
+            alert('❌ Erro ao verificar: ' + e.message);
         }
     }
 
@@ -335,7 +316,6 @@
         if (p) { 
             carrinho.push(p); 
             atualizarTotal();
-            // Feedback visual
             const btn = event.target;
             btn.textContent = '✅';
             setTimeout(() => btn.textContent = 'Adicionar', 800);
@@ -354,7 +334,7 @@
     }
 
     // ============================================================
-    //  GERAR PIX
+    //  GERAR PIX E SALVAR PEDIDO (AGORA VIA JSONP)
     // ============================================================
     async function irParaPagamento() {
         if (carrinho.length === 0) {
@@ -369,15 +349,17 @@
             itens += p.nome + ", "; 
         });
         totalPedido = total;
-        
-        const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=Cliente&descricao=${encodeURIComponent(itens)}`;
+
+        const url = `${SCRIPT_URL}?action=saveOrder&valor=${total.toFixed(2)}&nome=Cliente%20Totem&itens=${encodeURIComponent(itens)}`;
         
         try {
-            const res = await jsonp(url, 'cb_venda_' + Date.now());
-            if (res && res.success) {
-                mostrarPix(res.pixCode, total);
+            const resposta = await jsonp(url, 'cb_venda_' + Date.now());
+            
+            if (resposta && resposta.success) {
+                pedidoAtualID = resposta.orderId;
+                mostrarPix(resposta.pixCode, total);
             } else {
-                alert("❌ Erro ao gerar PIX: " + (res?.erro || "Erro desconhecido"));
+                alert("❌ Erro ao gerar PIX: " + (resposta?.erro || "Erro desconhecido"));
             }
         } catch (e) {
             alert("❌ Erro de conexão: " + e.message);
@@ -385,7 +367,7 @@
     }
 
     // ============================================================
-    //  MOSTRAR PIX
+    //  MOSTRAR PIX E QR CODE
     // ============================================================
     function mostrarPix(code, valor) {
         navegar('pix');
@@ -428,7 +410,7 @@
             }
         }, 1000);
 
-        // Iniciar verificação automática
+        // Iniciar verificação automática do pedido específico
         iniciarVerificacao();
     }
 
@@ -438,9 +420,11 @@
         const verificar = async () => {
             if (vendaConfirmada) return;
             
+            // Chama a função verificarStatusPedido com o ID do pedido salvo
             try {
-                const r = await jsonp(SCRIPT_URL + '?action=verificarPagamento', 'cb_verif_' + Date.now());
-                if (r && r.confirmado) {
+                const status = await jsonp(SCRIPT_URL + '?action=pedido&id=' + pedidoAtualID, 'cb_status_' + Date.now());
+                
+                if (status && status.success && status.data && status.data.status === 'PAGO') {
                     confirmarPagamento();
                     return;
                 }
@@ -483,7 +467,6 @@
         
         limparCarrinho();
         
-        // Mostra notificação
         if (Notification.permission === "granted") {
             new Notification("✅ Pagamento Confirmado!", {
                 body: "Seu pedido foi liberado!",
@@ -497,7 +480,6 @@
             navigator.clipboard.writeText(window.pixCodeGlobal).then(() => {
                 alert('📋 Código PIX copiado!');
             }).catch(() => {
-                // Fallback
                 const textarea = document.createElement('textarea');
                 textarea.value = window.pixCodeGlobal;
                 document.body.appendChild(textarea);
@@ -530,7 +512,6 @@
     window.onload = function() {
         carregarProdutos();
         
-        // Solicitar permissão para notificações
         if (Notification.permission === "default") {
             Notification.requestPermission();
         }
