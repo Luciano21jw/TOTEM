@@ -63,6 +63,9 @@
         .footer-actions { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         .botao-nova-venda { flex: 1; background: var(--secundaria); color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 16px; }
         .botao-cancelar-venda { flex: 1; background: rgba(255,82,82,0.1); color: var(--vermelho); border: 1px solid rgba(255,82,82,0.2); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: 700; font-size: 14px; }
+        .btn-testar { background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 10px; }
+        .debug-info { background: #333; color: #00ff00; padding: 10px; border-radius: 8px; font-size: 12px; font-family: monospace; width: 100%; margin-top: 10px; display: none; max-height: 100px; overflow-y: auto; }
+        .debug-info.visivel { display: block; }
     </style>
 </head>
 <body>
@@ -72,6 +75,8 @@
         <div class="logo-marca">SABOR TOTAL</div>
         <div class="banner-home">🍔🔥</div>
         <button class="botao-iniciar" onclick="navegar('escolha')">TOQUE PARA COMEÇAR</button>
+        <button class="btn-testar" onclick="testarConexao()">🔧 Testar Sistema</button>
+        <div id="debugInfo" class="debug-info"></div>
     </div>
 
     <div id="escolha" class="tela">
@@ -128,29 +133,77 @@
 
 <script>
     // ============================================================
-    //  COLE AQUI O SEU LINK DO WEB APP ( /exec )
+    //  CONFIGURAÇÕES
     // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGej4WpWVL8scllGGrZSvJ3zA1CEFJREKknL-4eUv_9IWl-kPLO85yuW53mtFLZDP_/exec"; 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJrHDDvJVeeRptDmX7v8R58H6Jo7UisU2xbL1x8PzXlVjZHdIeiX6BsxrztY7V3bxq/exec"; // SUBSTITUA PELA SUA URL
 
     let carrinho = [];
     let produtos = [];
     let categoriaAtiva = "Todos";
     let timerVerificacao = null;
+    let timerInterval = null;
     let totalPedido = 0;
     let vendaConfirmada = false;
 
     // ============================================================
-    //  FUNÇÃO JSONP (Para conectar com seu Code.gs)
+    //  FUNÇÃO JSONP
     // ============================================================
     function jsonp(url, cb) {
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => { delete window[cb]; reject(new Error('timeout')); }, 10000);
-            window[cb] = function(data) { clearTimeout(timeout); resolve(data); delete window[cb]; };
+            const timeout = setTimeout(() => { 
+                delete window[cb]; 
+                reject(new Error('Timeout - Verifique sua conexão com a internet')); 
+            }, 15000);
+            
+            window[cb] = function(data) { 
+                clearTimeout(timeout); 
+                resolve(data); 
+                delete window[cb]; 
+            };
+            
             const s = document.createElement('script');
             s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
-            s.onerror = () => { clearTimeout(timeout); reject(new Error('erro')); };
+            s.onerror = () => { 
+                clearTimeout(timeout); 
+                reject(new Error('Erro ao carregar o script')); 
+            };
             document.body.appendChild(s);
         });
+    }
+
+    // ============================================================
+    //  TESTAR CONEXÃO
+    // ============================================================
+    async function testarConexao() {
+        const debug = document.getElementById('debugInfo');
+        debug.classList.add('visivel');
+        debug.innerHTML = '⏳ Testando conexão...\n';
+        
+        try {
+            const data = await jsonp(SCRIPT_URL + '?action=testarConfiguracao', 'cb_test_' + Date.now());
+            if (data && data.success) {
+                debug.innerHTML += '✅ Conexão OK!\n';
+                debug.innerHTML += '📌 Chave PIX: ' + data.chave + '\n';
+                debug.innerHTML += '📌 Nome: ' + data.nome + '\n';
+                debug.innerHTML += '📌 Cidade: ' + data.cidade + '\n';
+                debug.innerHTML += '✅ Sistema configurado corretamente!';
+                alert('✅ Sistema configurado corretamente!\n\n' + 
+                      'Chave PIX: ' + data.chave + '\n' +
+                      'Nome: ' + data.nome + '\n' +
+                      'Cidade: ' + data.cidade);
+            } else {
+                debug.innerHTML += '❌ Erro: ' + (data?.mensagem || 'Configuração não encontrada') + '\n';
+                debug.innerHTML += '⚠️ Crie a aba "Configurações" na planilha com:\n';
+                debug.innerHTML += 'B1: Chave PIX\n';
+                debug.innerHTML += 'B2: Seu Nome\n';
+                debug.innerHTML += 'B3: Sua Cidade';
+                alert('❌ ' + (data?.mensagem || 'Configuração não encontrada'));
+            }
+        } catch (e) {
+            debug.innerHTML += '❌ Erro de conexão: ' + e.message + '\n';
+            debug.innerHTML += '⚠️ Verifique se a URL do Web App está correta';
+            alert('❌ Erro de conexão: ' + e.message);
+        }
     }
 
     // ============================================================
@@ -167,8 +220,15 @@
                     status: p.status, 
                     categoria: p.categoria || "Geral"
                 }));
-            } else { produtos = []; }
-        } catch (e) { produtos = []; }
+                console.log('✅ Produtos carregados:', produtos.length);
+            } else {
+                produtos = [];
+                console.warn('⚠️ Nenhum produto encontrado');
+            }
+        } catch (e) {
+            produtos = [];
+            console.error('❌ Erro ao carregar produtos:', e);
+        }
         criarBarraCategorias();
         renderizarCardapio();
     }
@@ -177,7 +237,9 @@
         const barra = document.getElementById('barraCategorias');
         const cats = [...new Set(produtos.filter(p => p.status === "ATIVO").map(p => p.categoria))];
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrar('Todos', this)">Todos</button>`;
-        cats.forEach(c => { if(c) barra.innerHTML += `<button class="cat-btn" onclick="filtrar('${c}', this)">${c}</button>`; });
+        cats.forEach(c => { 
+            if(c) barra.innerHTML += `<button class="cat-btn" onclick="filtrar('${c}', this)">${c}</button>`; 
+        });
     }
 
     function filtrar(cat, btn) {
@@ -192,10 +254,22 @@
         container.innerHTML = '';
         const ativos = produtos.filter(p => p.status === "ATIVO");
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
+        
+        if (filtrados.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#888;">Nenhum produto disponível</div>';
+            return;
+        }
+        
         filtrados.forEach((p, i) => {
             const div = document.createElement('div');
             div.className = 'produto';
-            div.innerHTML = `<div class="icone-produto">${p.imagem ? `<img src="${p.imagem}">` : '🍽️'}</div><div class="nome-produto">${p.nome}</div><div class="preco-produto">R$ ${p.preco.toFixed(2)}</div><button class="adicionar-btn" onclick="adicionar(${i})">Adicionar</button>`;
+            const imagemHtml = p.imagem ? `<img src="${p.imagem}">` : '🍽️';
+            div.innerHTML = `
+                <div class="icone-produto">${imagemHtml}</div>
+                <div class="nome-produto">${p.nome}</div>
+                <div class="preco-produto">R$ ${p.preco.toFixed(2)}</div>
+                <button class="adicionar-btn" onclick="adicionar(${i})">Adicionar</button>
+            `;
             container.appendChild(div);
         });
     }
@@ -204,10 +278,16 @@
         const ativos = produtos.filter(p => p.status === "ATIVO");
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
         const p = filtrados[index];
-        if (p) { carrinho.push(p); atualizarTotal(); }
+        if (p) { 
+            carrinho.push(p); 
+            atualizarTotal(); 
+        }
     }
 
-    function limparCarrinho() { carrinho = []; atualizarTotal(); }
+    function limparCarrinho() { 
+        carrinho = []; 
+        atualizarTotal(); 
+    }
 
     function atualizarTotal() {
         let total = 0;
@@ -219,27 +299,40 @@
     //  GERAR PIX
     // ============================================================
     async function irParaPagamento() {
-        if (carrinho.length === 0) return alert("Adicione itens!");
+        if (carrinho.length === 0) {
+            alert("Adicione itens ao carrinho!");
+            return;
+        }
+        
         let total = 0;
         let itens = "";
-        carrinho.forEach(p => { total += p.preco; itens += p.nome + ", "; });
+        carrinho.forEach(p => { 
+            total += p.preco; 
+            itens += p.nome + ", "; 
+        });
         totalPedido = total;
+        
         const url = `${SCRIPT_URL}?action=registrarVenda&data=${new Date().toISOString().split('T')[0]}&valor=${total.toFixed(2)}&cliente=Cliente&descricao=${encodeURIComponent(itens)}`;
+        
         try {
             const res = await jsonp(url, 'cb_venda_' + Date.now());
             if (res && res.success) {
                 mostrarPix(res.pixCode, total);
             } else {
-                alert("Erro: " + (res?.erro || "Erro desconhecido"));
+                alert("❌ Erro ao gerar PIX: " + (res?.erro || "Erro desconhecido"));
             }
-        } catch (e) { alert("Erro de conexão."); }
+        } catch (e) {
+            alert("❌ Erro de conexão: " + e.message);
+        }
     }
 
     // ============================================================
-    //  MOSTRAR PIX (5 minutos)
+    //  MOSTRAR PIX
     // ============================================================
     function mostrarPix(code, valor) {
         navegar('pix');
+        vendaConfirmada = false;
+        
         document.getElementById('displayValor').innerText = valor.toFixed(2).replace('.', ',');
         document.getElementById('statusPagamento').className = 'status-pendente';
         document.getElementById('statusPagamento').innerText = "⏳ Aguardando pagamento...";
@@ -250,66 +343,121 @@
         document.getElementById('pixCodeTexto').innerText = code;
         window.pixCodeGlobal = code;
 
+        // Gerar QR Code
         const qrDiv = document.getElementById('qrcode');
         qrDiv.innerHTML = '';
-        new QRCode(qrDiv, { text: code, width: 170, height: 170 });
+        try {
+            new QRCode(qrDiv, { text: code, width: 170, height: 170 });
+        } catch (e) {
+            qrDiv.innerHTML = '<div style="font-size:12px;color:red;">Erro ao gerar QR Code</div>';
+        }
 
-        if (timerVerificacao) clearInterval(timerVerificacao);
+        // Timer de 5 minutos
+        if (timerInterval) clearInterval(timerInterval);
+        if (timerVerificacao) clearTimeout(timerVerificacao);
+        
         let seg = 0;
         const max = 300;
-        const timer = setInterval(() => {
+        timerInterval = setInterval(() => {
             seg++;
-            if (seg >= max && !document.getElementById('checkWritingContainer').classList.contains('visivel')) {
-                clearInterval(timer);
-                document.getElementById('temporizador').innerText = "Tempo esgotado.";
-            } else {
+            if (seg >= max && !vendaConfirmada) {
+                clearInterval(timerInterval);
+                document.getElementById('temporizador').innerText = "⏰ Tempo esgotado. Faça um novo pedido.";
+            } else if (!vendaConfirmada) {
                 const m = Math.floor(seg / 60);
                 const s = seg % 60;
                 document.getElementById('temporizador').innerText = `⏱️ Aguardando... ${m}m ${s}s`;
             }
         }, 1000);
 
-        timerVerificacao = setTimeout(function verificar() {
+        // Iniciar verificação automática
+        iniciarVerificacao();
+    }
+
+    function iniciarVerificacao() {
+        if (vendaConfirmada) return;
+        
+        const verificar = async () => {
             if (vendaConfirmada) return;
-            jsonp(SCRIPT_URL + '?action=verificarPagamento', 'cb_verif_' + Date.now())
-                .then(r => {
-                    if (r && r.confirmado) {
-                        clearTimeout(timerVerificacao);
-                        clearInterval(timer);
-                        confirmarPagamento();
-                    } else {
-                        if (seg < max) timerVerificacao = setTimeout(verificar, 5000);
-                    }
-                })
-                .catch(() => {
-                    if (seg < max) timerVerificacao = setTimeout(verificar, 5000);
-                });
-        }, 2000);
+            
+            try {
+                const r = await jsonp(SCRIPT_URL + '?action=verificarPagamento', 'cb_verif_' + Date.now());
+                if (r && r.confirmado) {
+                    confirmarPagamento();
+                    return;
+                }
+            } catch (e) {
+                console.log('⚠️ Erro na verificação:', e.message);
+            }
+            
+            // Tenta novamente em 5 segundos
+            if (!vendaConfirmada) {
+                timerVerificacao = setTimeout(verificar, 5000);
+            }
+        };
+        
+        // Primeira verificação após 2 segundos
+        timerVerificacao = setTimeout(verificar, 2000);
     }
 
     function confirmarPagamento() {
+        if (vendaConfirmada) return;
         vendaConfirmada = true;
+        
+        clearInterval(timerInterval);
+        clearTimeout(timerVerificacao);
+        
         document.getElementById('statusPagamento').className = 'status-pago';
         document.getElementById('statusPagamento').innerText = "✅ Pagamento confirmado!";
         document.getElementById('temporizador').innerText = "✅ Pedido liberado!";
         document.getElementById('qrContainer').classList.add('confirmed');
+        
         const c = document.getElementById('checkWritingContainer');
         c.classList.add('visivel');
         const path = c.querySelector('.check-path');
         path.style.animation = 'none';
         path.offsetHeight;
         path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
-        setTimeout(() => { document.getElementById('btnNovaVenda').style.display = 'block'; }, 1500);
+        
+        setTimeout(() => { 
+            document.getElementById('btnNovaVenda').style.display = 'block'; 
+        }, 1500);
+        
         limparCarrinho();
+        
+        // Mostra notificação
+        if (Notification.permission === "granted") {
+            new Notification("✅ Pagamento Confirmado!", {
+                body: "Seu pedido foi liberado!",
+                icon: "https://img.icons8.com/color/48/000000/checkmark--v1.png"
+            });
+        }
     }
 
-    function copiarPix() { if (window.pixCodeGlobal) navigator.clipboard.writeText(window.pixCodeGlobal); }
+    function copiarPix() { 
+        if (window.pixCodeGlobal) {
+            navigator.clipboard.writeText(window.pixCodeGlobal).then(() => {
+                alert('📋 Código PIX copiado!');
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = window.pixCodeGlobal;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('📋 Código PIX copiado!');
+            });
+        }
+    }
 
     function cancelarPedido() {
-        if (confirm("Deseja cancelar?")) {
+        if (confirm("Deseja cancelar este pedido?")) {
+            clearInterval(timerInterval);
             clearTimeout(timerVerificacao);
-            navegar('home');
+            vendaConfirmada = false;
             limparCarrinho();
+            navegar('home');
         }
     }
 
@@ -318,7 +466,17 @@
         document.getElementById(id).classList.add('ativa'); 
     }
 
-    window.onload = carregarProdutos;
+    // ============================================================
+    //  INICIALIZAÇÃO
+    // ============================================================
+    window.onload = function() {
+        carregarProdutos();
+        
+        // Solicitar permissão para notificações
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    };
 </script>
 </body>
 </html>
