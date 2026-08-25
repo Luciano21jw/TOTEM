@@ -152,16 +152,15 @@
 
 <script>
     // ============================================================
-    //  URL DO SEU WEB APP
+    //  ⚠️⚠️⚠️ COLOQUE SUA URL DO WEB APP AQUI ⚠️⚠️⚠️
     // ============================================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVXrCFdixHlB9WGYB_bF8-StRL-R9qAhEbL8r3eJj4m1JsVzXNR-2Vt_mYdkE6sGpG/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVmm-t12mkWSz2Kvx0FIHxd1lMPZpb5f3gt6rbK0dkc-DzylW9socXVYyB3OKj115o/exec";
 
     let carrinho = [];
     let produtos = [];
     let categoriaAtiva = "Todos";
     let timerVerificacao = null;
     let timerInterval = null;
-    let totalPedido = 0;
     let vendaConfirmada = false;
     let pedidoAtualID = "";
 
@@ -203,12 +202,15 @@
             if (data && data.success) {
                 debug.innerHTML += '✅ Conexão OK!\n';
                 debug.innerHTML += '📌 Chave PIX: ' + data.chave + '\n';
-                alert('✅ Sistema OK!');
+                alert('✅ Sistema OK! Chave PIX encontrada.');
             } else {
                 debug.innerHTML += '❌ ' + (data?.mensagem || 'Erro') + '\n';
                 alert('❌ ' + (data?.mensagem || 'Erro'));
             }
-        } catch (e) { debug.innerHTML += '❌ ' + e.message + '\n'; }
+        } catch (e) { 
+            debug.innerHTML += '❌ ' + e.message + '\n';
+            alert('❌ ' + e.message);
+        }
     }
 
     // ============================================================
@@ -311,7 +313,6 @@
         let total = 0;
         let itens = "";
         carrinho.forEach(p => { total += p.preco; itens += p.nome + ", "; });
-        totalPedido = total;
 
         const url = `${SCRIPT_URL}?action=saveOrder&valor=${total.toFixed(2)}&nome=Cliente%20Totem&itens=${encodeURIComponent(itens)}`;
         
