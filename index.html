@@ -152,7 +152,7 @@
 
 <script>
     // ============================================================
-    //  COLOQUE SUA URL DO WEB APP AQUI (A URL QUE VOCÊ ME PASSOU)
+    //  URL DO SEU WEB APP
     // ============================================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVXrCFdixHlB9WGYB_bF8-StRL-R9qAhEbL8r3eJj4m1JsVzXNR-2Vt_mYdkE6sGpG/exec";
 
@@ -165,12 +165,14 @@
     let vendaConfirmada = false;
     let pedidoAtualID = "";
 
-    // Função JSONP para chamar o Web App
+    // ============================================================
+    //  FUNÇÃO JSONP (FUNCIONA EM QUALQUER LUGAR)
+    // ============================================================
     function jsonp(url, cb) {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => { 
                 delete window[cb]; 
-                reject(new Error('Timeout - Verifique sua conexão com a internet')); 
+                reject(new Error('Timeout - Verifique sua conexão')); 
             }, 15000);
             
             window[cb] = function(data) { 
@@ -183,7 +185,7 @@
             s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
             s.onerror = () => { 
                 clearTimeout(timeout); 
-                reject(new Error('Erro ao carregar o script')); 
+                reject(new Error('Erro ao carregar')); 
             };
             document.body.appendChild(s);
         });
@@ -195,50 +197,35 @@
     async function testarConexao() {
         const debug = document.getElementById('debugInfo');
         debug.classList.add('visivel');
-        debug.innerHTML = '⏳ Testando configurações...\n';
-        
+        debug.innerHTML = '⏳ Testando...\n';
         try {
             const data = await jsonp(SCRIPT_URL + '?action=testarConfiguracao', 'cb_test_' + Date.now());
             if (data && data.success) {
                 debug.innerHTML += '✅ Conexão OK!\n';
                 debug.innerHTML += '📌 Chave PIX: ' + data.chave + '\n';
-                debug.innerHTML += '📌 Nome: ' + data.nome + '\n';
-                debug.innerHTML += '📌 Cidade: ' + data.cidade + '\n';
-                alert('✅ Sistema configurado corretamente!');
+                alert('✅ Sistema OK!');
             } else {
-                debug.innerHTML += '❌ Erro: ' + (data?.mensagem || 'Configuração não encontrada') + '\n';
-                alert('❌ ' + (data?.mensagem || 'Configuração não encontrada'));
+                debug.innerHTML += '❌ ' + (data?.mensagem || 'Erro') + '\n';
+                alert('❌ ' + (data?.mensagem || 'Erro'));
             }
-        } catch (e) {
-            debug.innerHTML += '❌ Erro de conexão: ' + e.message + '\n';
-            alert('❌ Erro de conexão: ' + e.message);
-        }
+        } catch (e) { debug.innerHTML += '❌ ' + e.message + '\n'; }
     }
 
     // ============================================================
-    //  TESTAR VERIFICAÇÃO DE EMAIL
+    //  TESTAR EMAIL
     // ============================================================
     async function testarVerificacaoEmail() {
         const debug = document.getElementById('debugInfo');
         debug.classList.add('visivel');
-        debug.innerHTML = '⏳ Verificando pagamento...\n';
-        
         try {
             const data = await jsonp(SCRIPT_URL + '?action=verificarPagamento', 'cb_email_' + Date.now());
-            debug.innerHTML += '📧 Resposta: ' + JSON.stringify(data) + '\n';
-            
             if (data && data.confirmado) {
-                debug.innerHTML += '✅ PAGAMENTO CONFIRMADO!\n';
-                alert('✅ Pagamento confirmado por email!');
+                alert('✅ Pagamento detectado!');
                 confirmarPagamento();
             } else {
-                debug.innerHTML += '⚠️ Nenhum pagamento encontrado.\n';
-                alert('⚠️ Nenhum pagamento confirmado encontrado.');
+                alert('⚠️ Nenhum pagamento ainda.');
             }
-        } catch (e) {
-            debug.innerHTML += '❌ Erro: ' + e.message + '\n';
-            alert('❌ Erro ao verificar: ' + e.message);
-        }
+        } catch (e) { alert('❌ ' + e.message); }
     }
 
     // ============================================================
@@ -247,23 +234,10 @@
     async function carregarProdutos() {
         try {
             const data = await jsonp(SCRIPT_URL + '?action=getProdutos', 'cb_prod_' + Date.now());
-            if (data && data.success && Array.isArray(data.data)) {
-                produtos = data.data.map(p => ({
-                    nome: p.nome, 
-                    preco: parseFloat(p.preco), 
-                    imagem: p.imagem, 
-                    status: p.status, 
-                    categoria: p.categoria || "Geral"
-                }));
-                console.log('✅ Produtos carregados:', produtos.length);
-            } else {
-                produtos = [];
-                console.warn('⚠️ Nenhum produto encontrado');
+            if (data && data.success) {
+                produtos = data.data.map(p => ({ nome: p.nome, preco: parseFloat(p.preco), imagem: p.imagem, status: p.status, categoria: p.categoria || "Geral" }));
             }
-        } catch (e) {
-            produtos = [];
-            console.error('❌ Erro ao carregar produtos:', e);
-        }
+        } catch (e) { produtos = []; }
         criarBarraCategorias();
         renderizarCardapio();
     }
@@ -272,9 +246,7 @@
         const barra = document.getElementById('barraCategorias');
         const cats = [...new Set(produtos.filter(p => p.status === "ATIVO").map(p => p.categoria))];
         barra.innerHTML = `<button class="cat-btn ativa" onclick="filtrar('Todos', this)">Todos</button>`;
-        cats.forEach(c => { 
-            if(c) barra.innerHTML += `<button class="cat-btn" onclick="filtrar('${c}', this)">${c}</button>`; 
-        });
+        cats.forEach(c => { if(c) barra.innerHTML += `<button class="cat-btn" onclick="filtrar('${c}', this)">${c}</button>`; });
     }
 
     function filtrar(cat, btn) {
@@ -291,7 +263,7 @@
         const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => p.categoria === categoriaAtiva);
         
         if (filtrados.length === 0) {
-            container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#888;">Nenhum produto disponível</div>';
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#888;">Sem produtos</div>';
             return;
         }
         
@@ -322,10 +294,7 @@
         }
     }
 
-    function limparCarrinho() { 
-        carrinho = []; 
-        atualizarTotal(); 
-    }
+    function limparCarrinho() { carrinho = []; atualizarTotal(); }
 
     function atualizarTotal() {
         let total = 0;
@@ -334,32 +303,25 @@
     }
 
     // ============================================================
-    //  GERAR PIX E SALVAR PEDIDO (AGORA VIA JSONP)
+    //  GERAR PIX (VIA GET JSONP)
     // ============================================================
     async function irParaPagamento() {
-        if (carrinho.length === 0) {
-            alert("Adicione itens ao carrinho!");
-            return;
-        }
+        if (carrinho.length === 0) { alert("Adicione itens!"); return; }
         
         let total = 0;
         let itens = "";
-        carrinho.forEach(p => { 
-            total += p.preco; 
-            itens += p.nome + ", "; 
-        });
+        carrinho.forEach(p => { total += p.preco; itens += p.nome + ", "; });
         totalPedido = total;
 
         const url = `${SCRIPT_URL}?action=saveOrder&valor=${total.toFixed(2)}&nome=Cliente%20Totem&itens=${encodeURIComponent(itens)}`;
         
         try {
-            const resposta = await jsonp(url, 'cb_venda_' + Date.now());
-            
-            if (resposta && resposta.success) {
-                pedidoAtualID = resposta.orderId;
-                mostrarPix(resposta.pixCode, total);
+            const res = await jsonp(url, 'cb_venda_' + Date.now());
+            if (res && res.success) {
+                pedidoAtualID = res.data.orderId;
+                mostrarPix(res.data.pixCode, total);
             } else {
-                alert("❌ Erro ao gerar PIX: " + (resposta?.erro || "Erro desconhecido"));
+                alert("❌ Erro ao gerar PIX: " + (res?.mensagem || "Erro desconhecido"));
             }
         } catch (e) {
             alert("❌ Erro de conexão: " + e.message);
@@ -367,7 +329,7 @@
     }
 
     // ============================================================
-    //  MOSTRAR PIX E QR CODE
+    //  MOSTRAR PIX
     // ============================================================
     function mostrarPix(code, valor) {
         navegar('pix');
@@ -383,16 +345,11 @@
         document.getElementById('pixCodeTexto').innerText = code;
         window.pixCodeGlobal = code;
 
-        // Gerar QR Code
         const qrDiv = document.getElementById('qrcode');
         qrDiv.innerHTML = '';
-        try {
-            new QRCode(qrDiv, { text: code, width: 170, height: 170 });
-        } catch (e) {
-            qrDiv.innerHTML = '<div style="font-size:12px;color:red;">Erro ao gerar QR Code</div>';
-        }
+        try { new QRCode(qrDiv, { text: code, width: 170, height: 170 }); }
+        catch (e) { qrDiv.innerHTML = '<div style="font-size:12px;color:red;">Erro QR</div>'; }
 
-        // Timer de 5 minutos
         if (timerInterval) clearInterval(timerInterval);
         if (timerVerificacao) clearTimeout(timerVerificacao);
         
@@ -402,7 +359,7 @@
             seg++;
             if (seg >= max && !vendaConfirmada) {
                 clearInterval(timerInterval);
-                document.getElementById('temporizador').innerText = "⏰ Tempo esgotado. Faça um novo pedido.";
+                document.getElementById('temporizador').innerText = "⏰ Tempo esgotado.";
             } else if (!vendaConfirmada) {
                 const m = Math.floor(seg / 60);
                 const s = seg % 60;
@@ -410,7 +367,6 @@
             }
         }, 1000);
 
-        // Iniciar verificação automática do pedido específico
         iniciarVerificacao();
     }
 
@@ -419,33 +375,22 @@
         
         const verificar = async () => {
             if (vendaConfirmada) return;
-            
-            // Chama a função verificarStatusPedido com o ID do pedido salvo
             try {
-                const status = await jsonp(SCRIPT_URL + '?action=pedido&id=' + pedidoAtualID, 'cb_status_' + Date.now());
-                
-                if (status && status.success && status.data && status.data.status === 'PAGO') {
+                const data = await jsonp(SCRIPT_URL + '?action=pedido&id=' + pedidoAtualID, 'cb_status_' + Date.now());
+                if (data && data.success && data.data && data.data.status === 'PAGO') {
                     confirmarPagamento();
                     return;
                 }
-            } catch (e) {
-                console.log('⚠️ Erro na verificação:', e.message);
-            }
+            } catch (e) {}
             
-            // Tenta novamente em 5 segundos
-            if (!vendaConfirmada) {
-                timerVerificacao = setTimeout(verificar, 5000);
-            }
+            if (!vendaConfirmada) timerVerificacao = setTimeout(verificar, 5000);
         };
-        
-        // Primeira verificação após 2 segundos
         timerVerificacao = setTimeout(verificar, 2000);
     }
 
     function confirmarPagamento() {
         if (vendaConfirmada) return;
         vendaConfirmada = true;
-        
         clearInterval(timerInterval);
         clearTimeout(timerVerificacao);
         
@@ -457,47 +402,22 @@
         const c = document.getElementById('checkWritingContainer');
         c.classList.add('visivel');
         const path = c.querySelector('.check-path');
-        path.style.animation = 'none';
-        path.offsetHeight;
-        path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
+        path.style.animation = 'none'; path.offsetHeight; path.style.animation = 'drawCheck 1.2s ease-in-out forwards';
         
-        setTimeout(() => { 
-            document.getElementById('btnNovaVenda').style.display = 'block'; 
-        }, 1500);
-        
+        setTimeout(() => { document.getElementById('btnNovaVenda').style.display = 'block'; }, 1500);
         limparCarrinho();
-        
-        if (Notification.permission === "granted") {
-            new Notification("✅ Pagamento Confirmado!", {
-                body: "Seu pedido foi liberado!",
-                icon: "https://img.icons8.com/color/48/000000/checkmark--v1.png"
-            });
-        }
     }
 
     function copiarPix() { 
         if (window.pixCodeGlobal) {
-            navigator.clipboard.writeText(window.pixCodeGlobal).then(() => {
-                alert('📋 Código PIX copiado!');
-            }).catch(() => {
-                const textarea = document.createElement('textarea');
-                textarea.value = window.pixCodeGlobal;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                alert('📋 Código PIX copiado!');
-            });
+            navigator.clipboard.writeText(window.pixCodeGlobal).then(() => alert('📋 Copiado!')).catch(() => alert('Não copiou'));
         }
     }
 
     function cancelarPedido() {
-        if (confirm("Deseja cancelar este pedido?")) {
-            clearInterval(timerInterval);
-            clearTimeout(timerVerificacao);
-            vendaConfirmada = false;
-            limparCarrinho();
-            navegar('home');
+        if (confirm("Deseja cancelar?")) {
+            clearInterval(timerInterval); clearTimeout(timerVerificacao);
+            vendaConfirmada = false; limparCarrinho(); navegar('home');
         }
     }
 
@@ -506,16 +426,7 @@
         document.getElementById(id).classList.add('ativa'); 
     }
 
-    // ============================================================
-    //  INICIALIZAÇÃO
-    // ============================================================
-    window.onload = function() {
-        carregarProdutos();
-        
-        if (Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-    };
+    window.onload = function() { carregarProdutos(); };
 </script>
 </body>
 </html>
