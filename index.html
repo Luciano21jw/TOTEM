@@ -93,7 +93,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
    COLOQUE A URL /exec DO SEU GOOGLE APPS SCRIPT AQUI
    Ex.: https://script.google.com/macros/s/SEU_ID/exec
    ============================================================ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6BWn0GooCW1yd7JqUxMvFSOhXPXxQs--zBSbPLVxjjzN9b8kMIjuRs9mGZs9j4f6W/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCYoCsn8WF0yeKaT8130lS2cv-NTkl44saTF1iN1hCXbnYUh-RcnOREbtDD3exkzUk/exec';
 
 let produtos=[], carrinho=[], categoria='Todos', tipoPedido='LOCAL';
 let pedidoAtual='', pixAtual='', timer=null, segundos=0, confirmado=false;
@@ -250,7 +250,10 @@ function copiarPix(){
 function money(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function escAttr(v){return esc(v)}
-window.addEventListener('load',carregarProdutos);\nsetInterval(()=>{ if(document.getElementById('cardapio').classList.contains('ativa')) carregarProdutos(); },30000);
+window.addEventListener('load', carregarProdutos);
+setInterval(() => {
+  if (document.getElementById('cardapio').classList.contains('ativa')) carregarProdutos();
+}, 30000);
 </script>
 </body>
 </html>
