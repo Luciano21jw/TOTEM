@@ -167,7 +167,7 @@
 
     let carrinho = [];
     let produtos = [];
-    let categoriaAtiva = "Todos";
+    let categoriaAtiva = "todos";
     let timerVerificacao = null;
     let timerInterval = null;
     let vendaConfirmada = false;
@@ -276,39 +276,49 @@
         const barra = document.getElementById('barraCategorias');
         if (!barra) return;
 
-        const ativos = produtos.filter(p => p.status === 'ATIVO');
-        const mapa = new Map();
-        ativos.forEach(p => {
-            const chave = p.categoriaChave || normalizarCategoria(p.categoria);
-            if (chave && !mapa.has(chave)) mapa.set(chave, p.categoria.trim());
-        });
-
-        // Mantém a ordem do seu cardápio e depois acrescenta outras categorias da planilha.
-        const preferidas = ['lanches', 'sobremesas', 'bebidas'];
-        const chaves = [
-            ...preferidas.filter(c => mapa.has(c)),
-            ...[...mapa.keys()].filter(c => !preferidas.includes(c)).sort()
+        // Botões FIXOS: não dependem da forma como a categoria veio da planilha.
+        // Isso também deixa o totem consistente mesmo se uma categoria estiver temporariamente sem produtos.
+        const categorias = [
+            { texto: 'Todos', chave: 'todos' },
+            { texto: 'Lanches', chave: 'lanches' },
+            { texto: 'Sobremesas', chave: 'sobremesas' },
+            { texto: 'Bebidas', chave: 'bebidas' }
         ];
 
         barra.innerHTML = '';
-        criarBotaoCategoria_(barra, 'Todos', 'Todos');
-        chaves.forEach(chave => criarBotaoCategoria_(barra, mapa.get(chave), chave));
-    }
 
-    function criarBotaoCategoria_(barra, texto, chave) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'cat-btn' + (chave === 'Todos' ? ' ativa' : '');
-        btn.textContent = texto;
-        btn.dataset.categoria = chave;
-        btn.addEventListener('click', () => filtrar(chave, btn));
-        barra.appendChild(btn);
+        categorias.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cat-btn' + (cat.chave === 'todos' ? ' ativa' : '');
+            btn.textContent = cat.texto;
+            btn.dataset.filtro = cat.chave;
+
+            // pointerup funciona melhor em tela touch e mouse.
+            btn.addEventListener('pointerup', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                filtrar(cat.chave, btn);
+            });
+
+            // Fallback para navegadores/totens que não disparam pointerup.
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                filtrar(cat.chave, btn);
+            });
+
+            barra.appendChild(btn);
+        });
     }
 
     function filtrar(cat, btn) {
-        categoriaAtiva = cat;
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('ativa'));
-        if (btn) btn.classList.add('ativa');
+        categoriaAtiva = normalizarCategoria(cat) || 'todos';
+
+        document.querySelectorAll('#barraCategorias .cat-btn').forEach(b => {
+            b.classList.toggle('ativa', b === btn);
+        });
+
         renderizarCardapio();
     }
 
@@ -316,7 +326,7 @@
         const container = document.getElementById('listaProdutos');
         container.innerHTML = '';
         const ativos = produtos.filter(p => p.status === "ATIVO");
-        const filtrados = categoriaAtiva === "Todos" ? ativos : ativos.filter(p => (p.categoriaChave || normalizarCategoria(p.categoria)) === categoriaAtiva);
+        const filtrados = categoriaAtiva === 'todos' ? ativos : ativos.filter(p => (p.categoriaChave || normalizarCategoria(p.categoria)) === categoriaAtiva);
         
         if (filtrados.length === 0) {
             container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#888;">Sem produtos</div>';
@@ -341,7 +351,7 @@
 
     function adicionar(index, btn) {
         const ativos = produtos.filter(p => p.status === "ATIVO");
-        const filtrados = categoriaAtiva === "Todos"
+        const filtrados = categoriaAtiva === 'todos'
             ? ativos
             : ativos.filter(p => (p.categoriaChave || normalizarCategoria(p.categoria)) === categoriaAtiva);
         const p = filtrados[index];
