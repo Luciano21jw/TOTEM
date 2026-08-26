@@ -93,7 +93,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
    COLOQUE A URL /exec DO SEU GOOGLE APPS SCRIPT AQUI
    Ex.: https://script.google.com/macros/s/SEU_ID/exec
    ============================================================ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCYoCsn8WF0yeKaT8130lS2cv-NTkl44saTF1iN1hCXbnYUh-RcnOREbtDD3exkzUk/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHxtCB4PI4e4uwun7X-IQZQAwmVjGJgVMzT5fcjAIprPUCo4otIgxBQgO27zStk8AF/exec';
 
 let produtos=[], carrinho=[], categoria='Todos', tipoPedido='LOCAL';
 let pedidoAtual='', pixAtual='', timer=null, segundos=0, confirmado=false;
@@ -192,14 +192,22 @@ function mostrarPix(data){
   verificar();
 }
 async function verificar(){
+  if(!pedidoAtual || confirmado)return;
   segundos+=5;
-  document.getElementById('timer').textContent='⏱️ Atualizando há '+segundos+' segundos';
+  document.getElementById('timer').textContent='⏱️ Procurando pagamento Nubank... '+segundos+'s';
   try{
-    const r=await api('pedido',{id:pedidoAtual});
-    if(r.success&&r.data){
-      atualizarStatusSite(r.data.status||'');
+    // O backend consulta o Gmail e procura exatamente o remetente
+    // todomundo@nubank.com.br após a geração deste PIX.
+    const r=await api('verificarPagamento',{id:pedidoAtual});
+    if(r.success){
+      atualizarStatusSite(r.status||'');
+      if(r.pago){
+        document.getElementById('timer').textContent='✅ Email do Nubank recebido. Pagamento confirmado!';
+      }
     }
-  }catch(e){}
+  }catch(e){
+    document.getElementById('timer').textContent='⏳ Aguardando email do Nubank...';
+  }
 }
 function atualizarStatusSite(status){
   const s=String(status||'').toUpperCase();
