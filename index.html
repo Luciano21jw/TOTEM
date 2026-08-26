@@ -161,7 +161,7 @@ async function carregarProdutos(){
     const r=await api('getProdutos');
     if(!r.success) throw new Error(r.mensagem||'Erro');
     produtos=r.data||[];
-    document.getElementById('conexao').textContent='✅ Planilha conectada';
+    document.getElementById('conexao').textContent='';
     renderCats();renderProdutos();
   }catch(e){
     document.getElementById('conexao').textContent='❌ '+e.message;
@@ -264,7 +264,7 @@ async function verificar(){
     if(r.success){
       atualizarStatusSite(r.status||'');
       if(r.pago){
-        document.getElementById('timer').textContent='✅ Email do Nubank recebido. Pagamento confirmado!';
+        document.getElementById('timer').textContent='';
       }
     }
   }catch(e){
