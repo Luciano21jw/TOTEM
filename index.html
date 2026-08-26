@@ -63,8 +63,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
   <div class="top"><button class="back" onclick="ir('escolha')">←</button>CARDÁPIO</div>
   <div class="form">
     <input id="nome" placeholder="Nome (opcional)">
-    <input id="whatsapp" placeholder="WhatsApp (opcional)">
-    <select id="tipo" class="full"><option value="LOCAL">Comer no local</option><option value="LEVAR">Para levar</option></select>
+    <input id="whatsapp" class="full" placeholder="WhatsApp (opcional)">
   </div>
   <div id="cats" class="cats"></div>
   <div id="produtos" class="produtos"><div style="grid-column:1/-1;text-align:center;padding:30px">Carregando...</div></div>
@@ -75,8 +74,9 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
 </section>
 
 <section id="pix" class="tela">
-  <div class="pix-title">PEDIDO <span id="pedidoId"></span></div>
+  <div class="pix-title">PAGAMENTO PIX</div>
   <div class="valor">R$ <span id="valorPix">0,00</span></div>
+  <div id="pedidoConfirmado" class="pedido-confirmado" style="display:none">Número do pedido: <strong id="pedidoIdConfirmado"></strong></div>
   <div id="status" class="status pend">⏳ Aguardando confirmação do pagamento...</div>
   <div id="timer" class="timer">Verificando automaticamente...</div>
   <div id="qr" class="qr"><div id="qrcode"></div></div>
@@ -95,7 +95,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
    ============================================================ */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPMEnF8oayS6NttTbRTymD4lNhfffqCmPO9p-MaCw15t5D_o8rYxAKzgeYSkK_Kwc4/exec';
 
-let produtos=[], carrinho=[], categoria='Todos', tipoPedido='LOCAL';
+let produtos=[], carrinho=[], categoria='TODOS', tipoPedido='LOCAL';
 let pedidoAtual='', pixAtual='', timer=null, segundos=0, confirmado=false;
 
 function jsonp(url){
@@ -118,7 +118,9 @@ function ir(id){
   document.getElementById(id).classList.add('ativa');
 }
 function definirTipo(t){
-  tipoPedido=t;document.getElementById('tipo').value=t;ir('cardapio');carregarProdutos();
+  tipoPedido=String(t||'LOCAL').toUpperCase();
+  ir('cardapio');
+  carregarProdutos();
 }
 async function carregarProdutos(){
   if(!SCRIPT_URL||SCRIPT_URL.includes('COLE_AQUI')){
@@ -136,15 +138,43 @@ async function carregarProdutos(){
     document.getElementById('produtos').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#c00">Não foi possível carregar o cardápio.</div>';
   }
 }
-function renderCats(){
-  const cats=[...new Set(produtos.map(p=>p.categoria||'Geral'))];
-  document.getElementById('cats').innerHTML=
-    '<button class="cat on" onclick="filtrar(\'Todos\',this)">Todos</button>'+
-    cats.map(c=>`<button class="cat" onclick="filtrar(${JSON.stringify(c)},this)">${esc(c)}</button>`).join('');
+function normalizarCategoria(v){
+  return String(v??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 }
-function filtrar(c,el){categoria=c;document.querySelectorAll('.cat').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderProdutos()}
+function renderCats(){
+  const mapa=new Map();
+  produtos.forEach(p=>{
+    const label=String(p.categoria||'Geral').trim()||'Geral';
+    const key=normalizarCategoria(label);
+    if(!mapa.has(key)) mapa.set(key,label);
+  });
+
+  if(categoria!=='TODOS' && !mapa.has(categoria)) categoria='TODOS';
+
+  const box=document.getElementById('cats');
+  box.innerHTML='';
+  const todos=document.createElement('button');
+  todos.className='cat'+(categoria==='TODOS'?' on':'');
+  todos.textContent='Todos';
+  todos.onclick=()=>filtrar('TODOS',todos);
+  box.appendChild(todos);
+
+  mapa.forEach((label,key)=>{
+    const btn=document.createElement('button');
+    btn.className='cat'+(categoria===key?' on':'');
+    btn.textContent=label;
+    btn.onclick=()=>filtrar(key,btn);
+    box.appendChild(btn);
+  });
+}
+function filtrar(c,el){
+  categoria=c;
+  document.querySelectorAll('.cat').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  renderProdutos();
+}
 function renderProdutos(){
-  const list=produtos.filter(p=>categoria==='Todos'||p.categoria===categoria);
+  const list=produtos.filter(p=>categoria==='TODOS'||normalizarCategoria(p.categoria||'Geral')===categoria);
   const box=document.getElementById('produtos');
   if(!list.length){box.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px">Nenhum produto disponível.</div>';return}
   box.innerHTML=list.map(p=>{
@@ -168,7 +198,7 @@ async function finalizar(){
   if(!carrinho.length){alert('Adicione pelo menos um produto.');return}
   const nome=document.getElementById('nome').value.trim()||'Cliente Totem';
   const whatsapp=document.getElementById('whatsapp').value.trim();
-  const tipo=document.getElementById('tipo').value;
+  const tipo=tipoPedido;
   try{
     const r=await api('criarPedido',{nome,whatsapp,tipo,itens:JSON.stringify(carrinho)});
     if(!r.success)throw new Error(r.mensagem||'Não foi possível criar o pedido');
@@ -178,7 +208,8 @@ async function finalizar(){
 }
 function mostrarPix(data){
   confirmado=false;segundos=0;
-  document.getElementById('pedidoId').textContent=data.orderId;
+  document.getElementById('pedidoConfirmado').style.display='none';
+  document.getElementById('pedidoIdConfirmado').textContent='';
   document.getElementById('valorPix').textContent=money(data.valor);
   document.getElementById('pixcode').textContent=data.pixCode;
   document.getElementById('status').className='status pend';
@@ -217,6 +248,8 @@ function atualizarStatusSite(status){
     confirmado=true;
     box.className='status pago';
     box.textContent='✅ PAGAMENTO CONFIRMADO!';
+    document.getElementById('pedidoIdConfirmado').textContent=pedidoAtual;
+    document.getElementById('pedidoConfirmado').style.display='block';
     document.getElementById('timer').textContent='Pedido liberado para preparo.';
     document.getElementById('novo').style.display='block';
     carrinho=[];atualizarTotal();
@@ -249,6 +282,8 @@ async function cancelar(){
 }
 function novaVenda(){
   clearInterval(timer);pedidoAtual='';pixAtual='';confirmado=false;
+  document.getElementById('pedidoConfirmado').style.display='none';
+  document.getElementById('pedidoIdConfirmado').textContent='';
   document.getElementById('nome').value='';document.getElementById('whatsapp').value='';
   ir('home');carregarProdutos();
 }
