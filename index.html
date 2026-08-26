@@ -57,7 +57,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
   <div class="logo">SABOR TOTAL</div>
   <div class="hero">🍔🔥</div>
   <button class="btn-start" onclick="ir('escolha')">TOQUE PARA COMEÇAR</button>
-  <div id="conexao" class="small-status">Conectando à planilha...</div>
+  <div id="conexao" class="small-status"></div>
 </section>
 
 <section id="escolha" class="tela">
@@ -110,7 +110,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
    COLOQUE A URL /exec DO SEU GOOGLE APPS SCRIPT AQUI
    Ex.: https://script.google.com/macros/s/SEU_ID/exec
    ============================================================ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwA9I-g2ppSUj8U-rf6e9rpZbkN7_WUsA30AAGihOOi8lqjKN0Mv1nb6QQF_dxDgMPq/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHYTN8LPzigOpHHg01xPIqTBh8lE8mhZ4G2Ba_Drl7BHE4bzSpeh8N4yt9ztvVkZ0I/exec';
 
 let produtos=[], carrinho=[], categoria='TODOS', tipoPedido='LOCAL', nomeCliente='';
 let pedidoAtual='', pixAtual='', timer=null, segundos=0, confirmado=false;
