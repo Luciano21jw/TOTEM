@@ -43,7 +43,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
 .add{width:100%;background:var(--dark);color:#fff;border:0;border-radius:7px;padding:8px;font-weight:700;cursor:pointer}
 .rodape{background:#fff;border-top:2px solid #ddd;padding:10px}.total{display:flex;justify-content:space-between;font-weight:800;font-size:18px;color:var(--dark);margin-bottom:8px}.acoes{display:flex;gap:8px}.limpar{flex:1;background:#eee;border:0;border-radius:8px;font-weight:700}.pagar{flex:2;background:var(--green);color:#fff;border:0;border-radius:8px;font-weight:800;padding:11px}
 #pix{background:var(--bg);align-items:center;padding:18px;overflow:auto}.pix-title{color:var(--dark);font-weight:800;text-align:center}.cliente-pix{font-size:18px;color:var(--dark);font-weight:700;text-align:center;margin:2px 0 4px}.valor{font-size:38px;color:var(--prim);font-weight:800;text-align:center;margin:3px 0 10px}
-.status{width:100%;padding:12px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:8px}.pend{background:#fff6db;color:var(--yellow)}.pago{background:#dff9ed;color:var(--green)}
+.status{width:100%;padding:12px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:8px}.pend{background:#fff6db;color:var(--yellow)}.pago{background:#dff9ed;color:var(--green)}.pedido-confirmado{width:100%;background:#fff;border:2px solid var(--green);border-radius:10px;padding:10px;text-align:center;color:var(--dark);font-weight:800;margin-bottom:8px}
 .qr{background:#fff;padding:12px;border-radius:14px;margin:10px auto;width:194px;height:194px;display:flex;align-items:center;justify-content:center}
 .code{width:100%;background:#fff;border:1px solid #ddd;border-radius:9px;padding:10px;font:11px monospace;word-break:break-all;text-align:center;cursor:pointer}
 .timer{font-size:11px;color:#777;margin:8px}.pix-actions{display:flex;gap:8px;width:100%;margin-top:10px}.cancel{flex:1;background:#ffe8e8;color:var(--red);border:0;border-radius:9px;padding:11px;font-weight:800}.new{flex:1;background:var(--dark);color:#fff;border:0;border-radius:9px;padding:11px;font-weight:800;display:none}
@@ -110,7 +110,7 @@ h2{color:var(--dark);font-size:26px;margin-bottom:28px;text-align:center}
    COLOQUE A URL /exec DO SEU GOOGLE APPS SCRIPT AQUI
    Ex.: https://script.google.com/macros/s/SEU_ID/exec
    ============================================================ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3bTh-2jmCviyoXMHxIEE2zP5j9UWnAI3CuinCoHz8Jw9gdXtpNLlr1xopL9ieoUMq/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwA9I-g2ppSUj8U-rf6e9rpZbkN7_WUsA30AAGihOOi8lqjKN0Mv1nb6QQF_dxDgMPq/exec';
 
 let produtos=[], carrinho=[], categoria='TODOS', tipoPedido='LOCAL', nomeCliente='';
 let pedidoAtual='', pixAtual='', timer=null, segundos=0, confirmado=false;
@@ -142,13 +142,13 @@ function definirTipo(t){
 }
 function continuarComNome(){
   const campo=document.getElementById('nomeCliente');
-  const nome=campo.value.trim();
-  if(!nome){
+  const nomeDigitado=campo.value.trim();
+  if(!nomeDigitado){
     alert('Digite seu nome para continuar.');
     campo.focus();
     return;
   }
-  nomeCliente=nome;
+  nomeCliente=nomeDigitado;
   ir('cardapio');
   carregarProdutos();
 }
@@ -226,11 +226,11 @@ function atualizarTotal(){
 function limpar(){carrinho=[];atualizarTotal()}
 async function finalizar(){
   if(!carrinho.length){alert('Adicione pelo menos um produto.');return}
-  const nome=nomeCliente||'Cliente Totem';
+  const clienteNome=nomeCliente||'Cliente Totem';
   const whatsapp='';
   const tipo=tipoPedido;
   try{
-    const r=await api('criarPedido',{nome,whatsapp,tipo,itens:JSON.stringify(carrinho)});
+    const r=await api('criarPedido',{nome:clienteNome,whatsapp,tipo,itens:JSON.stringify(carrinho)});
     if(!r.success)throw new Error(r.mensagem||'Não foi possível criar o pedido');
     pedidoAtual=r.data.orderId;pixAtual=r.data.pixCode;
     mostrarPix(r.data); 
